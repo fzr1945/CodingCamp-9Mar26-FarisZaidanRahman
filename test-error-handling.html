@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Test - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Error Handling and User Feedback Test</h1>
+        
+        <div class="test-section">
+            <h2>Toast Notification Tests</h2>
+            <button class="test-button" onclick="testSuccessToast()">Test Success Toast</button>
+            <button class="test-button" onclick="testErrorToast()">Test Error Toast</button>
+            <button class="test-button" onclick="testWarningToast()">Test Warning Toast</button>
+            <button class="test-button" onclick="testInfoToast()">Test Info Toast</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Task Validation Tests</h2>
+            <div class="task-input">
+                <input type="text" id="test-task-input" placeholder="Test task input..." maxlength="500">
+                <button class="btn btn-primary" onclick="testTaskValidation()">Add Task</button>
+            </div>
+            <button class="test-button" onclick="testEmptyTask()">Test Empty Task</button>
+            <button class="test-button" onclick="testDuplicateTask()">Test Duplicate Task</button>
+            <button class="test-button" onclick="testLongTask()">Test Long Task</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Quick Link Validation Tests</h2>
+            <div class="link-input">
+                <input type="text" id="test-link-label" placeholder="Test link name..." maxlength="50">
+                <input type="url" id="test-link-url" placeholder="https://example.com">
+                <button class="btn btn-primary" onclick="testLinkValidation()">Add Link</button>
+            </div>
+            <button class="test-button" onclick="testInvalidUrl()">Test Invalid URL</button>
+            <button class="test-button" onclick="testEmptyLink()">Test Empty Link</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Storage Error Tests</h2>
+            <button class="test-button" onclick="testStorageQuota()">Test Storage Quota</button>
+            <button class="test-button" onclick="testStorageUnavailable()">Test Storage Unavailable</button>
+        </div>
+        
+        <div class="test-results" id="test-results">
+            <h3>Test Results:</h3>
+            <div id="results-content">Click buttons above to test error handling...</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test functions
+        function testSuccessToast() {
+            NotificationSystem.showSuccess('This is a success message!');
+            logResult('Success toast displayed');
+        }
+        
+        function testErrorToast() {
+            NotificationSystem.showError('This is an error message!');
+            logResult('Error toast displayed');
+        }
+        
+        function testWarningToast() {
+            NotificationSystem.showWarning('This is a warning message!');
+            logResult('Warning toast displayed');
+        }
+        
+        function testInfoToast() {
+            NotificationSystem.showInfo('This is an info message!');
+            logResult('Info toast displayed');
+        }
+        
+        function testTaskValidation() {
+            const input = document.getElementById('test-task-input');
+            const text = input.value.trim();
+            
+            if (!text) {
+                NotificationSystem.showWarning('Please enter a task description.');
+                logResult('Empty task validation triggered');
+                return;
+            }
+            
+            // Simulate adding task
+            NotificationSystem.showSuccess('Task validation passed!');
+            input.value = '';
+            logResult('Task validation successful');
+        }
+        
+        function testEmptyTask() {
+            document.getElementById('test-task-input').value = '';
+            testTaskValidation();
+        }
+        
+        function testDuplicateTask() {
+            // Simulate duplicate task scenario
+            NotificationSystem.showWarning('This task already exists. Please enter a different task.');
+            logResult('Duplicate task validation triggered');
+        }
+        
+        function testLongTask() {
+            const longText = 'A'.repeat(501);
+            document.getElementById('test-task-input').value = longText;
+            NotificationSystem.showError('Task description is too long. Maximum 500 characters allowed.');
+            logResult('Long task validation triggered');
+        }
+        
+        function testLinkValidation() {
+            const labelInput = document.getElementById('test-link-label');
+            const urlInput = document.getElementById('test-link-url');
+            
+            const label = labelInput.value.trim();
+            const url = urlInput.value.trim();
+            
+            if (!label) {
+                NotificationSystem.showWarning('Please enter a link name.');
+                logResult('Empty link label validation triggered');
+                return;
+            }
+            
+            if (!url) {
+                NotificationSystem.showWarning('Please enter a URL.');
+                logResult('Empty URL validation triggered');
+                return;
+            }
+            
+            try {
+                new URL(url);
+                NotificationSystem.showSuccess('Link validation passed!');
+                labelInput.value = '';
+                urlInput.value = '';
+                logResult('Link validation successful');
+            } catch {
+                NotificationSystem.showError('Please enter a valid URL (must start with http:// or https://).');
+                logResult('Invalid URL validation triggered');
+            }
+        }
+        
+        function testInvalidUrl() {
+            document.getElementById('test-link-label').value = 'Test Link';
+            document.getElementById('test-link-url').value = 'invalid-url';
+            testLinkValidation();
+        }
+        
+        function testEmptyLink() {
+            document.getElementById('test-link-label').value = '';
+            document.getElementById('test-link-url').value = '';
+            testLinkValidation();
+        }
+        
+        function testStorageQuota() {
+            // Simulate storage quota exceeded
+            NotificationSystem.showError('Storage space is full. Please clear some data or use a different browser.');
+            logResult('Storage quota error simulation');
+        }
+        
+        function testStorageUnavailable() {
+            // Simulate storage unavailable
+            NotificationSystem.showWarning('Local storage is not available. Data will not be saved between sessions.');
+            logResult('Storage unavailable warning simulation');
+        }
+        
+        function logResult(message) {
+            const resultsContent = document.getElementById('results-content');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            logResult('Error handling test page loaded successfully');
+        });
+    </script>
+</body>
+</html>

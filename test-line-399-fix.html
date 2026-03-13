@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Line 399 Fix</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        .test-log {
+            background: #f8f9fa;
+            color: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .test-btn {
+            background: white;
+            color: #28a745;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h4>✅ Line 399 Fix Test</h4>
+        <p>Testing NotificationSystem initialization fix</p>
+        
+        <button class="test-btn" onclick="testNotifications()">Test Notifications</button>
+        <button class="test-btn" onclick="testTaskAdd()">Test Task Add</button>
+        <button class="test-btn" onclick="clearLog()">Clear Log</button>
+        
+        <div class="test-log" id="test-log">Ready to test...</div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testLog = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push(logEntry);
+            
+            const logDiv = document.getElementById('test-log');
+            logDiv.innerHTML = testLog.slice(-15).join('<br>');
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function testNotifications() {
+            log('🧪 Testing notification system...');
+            
+            try {
+                // Test if NotificationSystem is available
+                if (typeof NotificationSystem !== 'undefined') {
+                    log('✅ NotificationSystem is available');
+                    
+                    // Test different notification types
+                    NotificationSystem.showSuccess('Success notification test');
+                    log('✅ Success notification sent');
+                    
+                    setTimeout(() => {
+                        NotificationSystem.showError('Error notification test');
+                        log('✅ Error notification sent');
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        NotificationSystem.showWarning('Warning notification test');
+                        log('✅ Warning notification sent');
+                    }, 2000);
+                    
+                    setTimeout(() => {
+                        NotificationSystem.showInfo('Info notification test');
+                        log('✅ Info notification sent');
+                    }, 3000);
+                    
+                    // Check if notification container exists
+                    setTimeout(() => {
+                        const container = document.getElementById('notification-container');
+                        if (container) {
+                            log('✅ Notification container created');
+                            log(`Container has ${container.children.length} notifications`);
+                        } else {
+                            log('❌ Notification container not found');
+                        }
+                    }, 4000);
+                    
+                } else {
+                    log('❌ NotificationSystem not available');
+                }
+            } catch (error) {
+                log(`❌ Notification test error: ${error.message}`);
+            }
+        }
+
+        function testTaskAdd() {
+            log('📝 Testing task add with notifications...');
+            
+            const taskInput = document.getElementById('task-input');
+            const addButton = document.getElementById('add-task');
+            
+            if (taskInput && addButton) {
+                taskInput.value = 'Test task with notification ' + Date.now();
+                log('Set task input value');
+                
+                try {
+                    addButton.click();
+                    log('✅ Task add button clicked');
+                    
+                    // Check if task was added
+                    setTimeout(() => {
+                        if (taskInput.value === '') {
+                            log('✅ Task input cleared - task likely added');
+                        } else {
+                            log('❌ Task input not cleared');
+                        }
+                        
+                        // Check notifications
+                        const container = document.getElementById('notification-container');
+                        if (container && container.children.length > 0) {
+                            log('✅ Notifications displayed');
+                        } else {
+                            log('⚠️ No notifications displayed');
+                        }
+                    }, 1000);
+                    
+                } catch (error) {
+                    log(`❌ Task add error: ${error.message}`);
+                }
+            } else {
+                log('❌ Task elements not found');
+            }
+        }
+
+        function clearLog() {
+            testLog = [];
+            document.getElementById('test-log').innerHTML = 'Log cleared...';
+        }
+
+        // Capture JavaScript errors
+        window.addEventListener('error', function(e) {
+            log(`❌ JS Error: ${e.message} at line ${e.lineno}`);
+        });
+
+        // Wait for app initialization
+        document.addEventListener('app:initialized', function() {
+            log('✅ App initialized successfully');
+            log('NotificationSystem should now be ready');
+            
+            // Auto-test notifications after initialization
+            setTimeout(() => {
+                log('🚀 Running automatic tests...');
+                testNotifications();
+            }, 1000);
+        });
+
+        // Initial log
+        log('🔧 Line 399 fix test page loaded');
+        log('Waiting for app initialization...');
+    </script>
+</body>
+</html>

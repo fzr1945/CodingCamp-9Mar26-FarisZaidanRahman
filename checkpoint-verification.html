@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 9 Checkpoint Verification</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .verification-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+            font-size: 0.9rem;
+        }
+        .test-item {
+            margin: 8px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .test-pass { background: #d4edda; color: #155724; }
+        .test-fail { background: #f8d7da; color: #721c24; }
+        .test-pending { background: #fff3cd; color: #856404; }
+        .summary {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .summary.pass { background: #d4edda; color: #155724; }
+        .summary.fail { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <!-- Verification Panel -->
+    <div class="verification-panel">
+        <h3>Task 9 Checkpoint</h3>
+        <div id="verification-results">
+            <div class="test-item test-pending">🔄 Running verification...</div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                🌙
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Timer Section -->
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks Section -->
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list">
+                    <!-- Tasks will be dynamically added here -->
+                </ul>
+            </section>
+
+            <!-- Quick Links Section -->
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container">
+                    <!-- Quick links will be dynamically added here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Checkpoint Verification Script
+        let verificationResults = [];
+        
+        function addResult(test, passed, message = '') {
+            verificationResults.push({
+                test,
+                passed,
+                message
+            });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const container = document.getElementById('verification-results');
+            container.innerHTML = '';
+            
+            let passCount = 0;
+            
+            verificationResults.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-item ${result.passed ? 'test-pass' : 'test-fail'}`;
+                div.innerHTML = `${result.passed ? '✅' : '❌'} ${result.test}${result.message ? ` - ${result.message}` : ''}`;
+                container.appendChild(div);
+                
+                if (result.passed) passCount++;
+            });
+            
+            // Add summary
+            const summary = document.createElement('div');
+            const percentage = Math.round((passCount / verificationResults.length) * 100);
+            summary.className = `summary ${percentage >= 80 ? 'pass' : 'fail'}`;
+            summary.innerHTML = `
+                <div>Results: ${passCount}/${verificationResults.length} (${percentage}%)</div>
+                <div>${percentage >= 80 ? '🎉 Checkpoint PASSED' : '⚠️ Issues detected'}</div>
+            `;
+            container.appendChild(summary);
+        }
+
+        // Run verification after app loads
+        setTimeout(() => {
+            runVerification();
+        }, 500);
+
+        function runVerification() {
+            console.log('🔍 Running Task 9 Checkpoint Verification...');
+
+            // Test 1: Storage Service
+            try {
+                addResult('Storage Service exists', typeof StorageService !== 'undefined');
+                addResult('Storage methods available', 
+                    typeof StorageService.get === 'function' && 
+                    typeof StorageService.set === 'function');
+            } catch (e) {
+                addResult('Storage Service', false, e.message);
+            }
+
+            // Test 2: Greeting Component
+            try {
+                addResult('Greeting Component exists', typeof GreetingComponent !== 'undefined');
+                addResult('Greeting methods available',
+                    typeof GreetingComponent.getGreetingMessage === 'function' &&
+                    typeof GreetingComponent.formatTime === 'function');
+                
+                // Test greeting logic
+                const morningGreeting = GreetingComponent.getGreetingMessage(9);
+                addResult('Morning greeting correct', morningGreeting === 'Good morning, Faris');
+                
+                const eveningGreeting = GreetingComponent.getGreetingMessage(19);
+                addResult('Evening greeting correct', eveningGreeting === 'Good evening, Faris');
+            } catch (e) {
+                addResult('Greeting Component', false, e.message);
+            }
+
+            // Test 3: Timer Component
+            try {
+                addResult('Timer Component exists', typeof TimerComponent !== 'undefined');
+                addResult('Timer methods available',
+                    typeof TimerComponent.start === 'function' &&
+                    typeof TimerComponent.stop === 'function' &&
+                    typeof TimerComponent.reset === 'function');
+                
+                // Test timer formatting
+                const formatted = TimerComponent.formatDisplay(1500);
+                addResult('Timer format correct', formatted === '25:00');
+                
+                // Test initial state
+                addResult('Timer initial state', TimerComponent.getTimeRemaining() === 1500);
+            } catch (e) {
+                addResult('Timer Component', false, e.message);
+            }
+
+            // Test 4: Task Manager
+            try {
+                addResult('Task Manager exists', typeof TaskManager !== 'undefined');
+                addResult('Task methods available',
+                    typeof TaskManager.addTask === 'function' &&
+                    typeof TaskManager.deleteTask === 'function' &&
+                    typeof TaskManager.getTasks === 'function');
+                
+                // Test task operations
+                const initialCount = TaskManager.getTasks().length;
+                const added = TaskManager.addTask('Verification test task');
+                addResult('Can add task', added);
+                
+                const newCount = TaskManager.getTasks().length;
+                addResult('Task list updated', newCount === initialCount + 1);
+                
+                // Clean up test task
+                const tasks = TaskManager.getTasks();
+                const testTask = tasks.find(t => t.text === 'Verification test task');
+                if (testTask) {
+                    TaskManager.deleteTask(testTask.id);
+                }
+            } catch (e) {
+                addResult('Task Manager', false, e.message);
+            }
+
+            // Test 5: Quick Links Component
+            try {
+                addResult('Quick Links exists', typeof QuickLinksComponent !== 'undefined');
+                addResult('Link methods available',
+                    typeof QuickLinksComponent.addLink === 'function' &&
+                    typeof QuickLinksComponent.deleteLink === 'function' &&
+                    typeof QuickLinksComponent.getLinks === 'function');
+                
+                // Test link operations
+                const initialLinkCount = QuickLinksComponent.getLinks().length;
+                QuickLinksComponent.addLink('Test Link', 'https://example.com');
+                const newLinkCount = QuickLinksComponent.getLinks().length;
+                addResult('Can add link', newLinkCount === initialLinkCount + 1);
+                
+                // Clean up test link
+                const links = QuickLinksComponent.getLinks();
+                const testLink = links.find(l => l.label === 'Test Link');
+                if (testLink) {
+                    QuickLinksComponent.deleteLink(testLink.id);
+                }
+            } catch (e) {
+                addResult('Quick Links', false, e.message);
+            }
+
+            // Test 6: Theme Manager
+            try {
+                addResult('Theme Manager exists', typeof ThemeManager !== 'undefined');
+                addResult('Theme methods available',
+                    typeof ThemeManager.toggleTheme === 'function' &&
+                    typeof ThemeManager.getCurrentTheme === 'function');
+                
+                // Test theme operations
+                const initialTheme = ThemeManager.getCurrentTheme();
+                addResult('Has current theme', typeof initialTheme === 'string');
+                
+                ThemeManager.toggleTheme();
+                const toggledTheme = ThemeManager.getCurrentTheme();
+                addResult('Theme toggles', initialTheme !== toggledTheme);
+                
+                // Reset theme
+                ThemeManager.toggleTheme();
+            } catch (e) {
+                addResult('Theme Manager', false, e.message);
+            }
+
+            // Test 7: DOM Integration
+            try {
+                const greetingEl = document.getElementById('greeting-message');
+                const timerEl = document.getElementById('timer-display');
+                const taskListEl = document.getElementById('task-list');
+                const linksEl = document.getElementById('links-container');
+                
+                addResult('DOM elements present',
+                    greetingEl && timerEl && taskListEl && linksEl);
+                
+                addResult('Greeting displays', greetingEl.textContent.includes('Faris'));
+                addResult('Timer displays', timerEl.textContent.includes(':'));
+            } catch (e) {
+                addResult('DOM Integration', false, e.message);
+            }
+
+            console.log('✅ Checkpoint verification complete');
+        }
+    </script>
+</body>
+</html>

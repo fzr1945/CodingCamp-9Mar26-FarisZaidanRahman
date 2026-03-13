@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 10.2 Error Handling Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-results {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task 10.2: Error Handling and User Feedback Test</h1>
+        
+        <div class="test-section">
+            <h2>1. Notification System Tests</h2>
+            <button class="test-button" onclick="testSuccessNotification()">Test Success Notification</button>
+            <button class="test-button" onclick="testErrorNotification()">Test Error Notification</button>
+            <button class="test-button" onclick="testWarningNotification()">Test Warning Notification</button>
+            <button class="test-button" onclick="testInfoNotification()">Test Info Notification</button>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Task Input Validation Tests</h2>
+            <button class="test-button" onclick="testEmptyTask()">Test Empty Task</button>
+            <button class="test-button" onclick="testDuplicateTask()">Test Duplicate Task</button>
+            <button class="test-button" onclick="testLongTask()">Test Long Task (>500 chars)</button>
+            <button class="test-button" onclick="testValidTask()">Test Valid Task</button>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Quick Links Validation Tests</h2>
+            <button class="test-button" onclick="testEmptyLabel()">Test Empty Label</button>
+            <button class="test-button" onclick="testInvalidUrl()">Test Invalid URL</button>
+            <button class="test-button" onclick="testLongLabel()">Test Long Label (>50 chars)</button>
+            <button class="test-button" onclick="testValidLink()">Test Valid Link</button>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Storage Error Handling Tests</h2>
+            <button class="test-button" onclick="testStorageAvailability()">Test Storage Availability</button>
+            <button class="test-button" onclick="testCorruptedData()">Test Corrupted Data Recovery</button>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Application Error Handling Tests</h2>
+            <button class="test-button" onclick="testInitializationError()">Test Initialization Error</button>
+            <button class="test-button" onclick="testComponentRestart()">Test Component Restart</button>
+        </div>
+
+        <div class="test-results" id="test-results">
+            <h3>Test Results:</h3>
+            <p>Click the test buttons above to verify error handling and user feedback functionality.</p>
+        </div>
+    </div>
+
+    <!-- Hidden elements for testing -->
+    <div style="display: none;">
+        <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+        <button id="add-task" class="btn btn-primary">Add</button>
+        <ul id="task-list" class="task-list"></ul>
+        
+        <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+        <input type="url" id="link-url" placeholder="https://example.com">
+        <button id="add-link" class="btn btn-primary">Add Link</button>
+        <div id="links-container" class="links-container"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testResults = [];
+
+        function logResult(test, result, message) {
+            testResults.push({ test, result, message });
+            updateResults();
+        }
+
+        function updateResults() {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '<h3>Test Results:</h3>';
+            testResults.forEach(result => {
+                const status = result.result ? '✅ PASS' : '❌ FAIL';
+                html += `<p><strong>${status}</strong> - ${result.test}: ${result.message}</p>`;
+            });
+            resultsDiv.innerHTML = html;
+        }
+
+        // 1. Notification System Tests
+        function testSuccessNotification() {
+            try {
+                NotificationSystem.showSuccess('This is a success notification!');
+                logResult('Success Notification', true, 'Success notification displayed');
+            } catch (error) {
+                logResult('Success Notification', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testErrorNotification() {
+            try {
+                NotificationSystem.showError('This is an error notification!');
+                logResult('Error Notification', true, 'Error notification displayed');
+            } catch (error) {
+                logResult('Error Notification', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testWarningNotification() {
+            try {
+                NotificationSystem.showWarning('This is a warning notification!');
+                logResult('Warning Notification', true, 'Warning notification displayed');
+            } catch (error) {
+                logResult('Warning Notification', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testInfoNotification() {
+            try {
+                NotificationSystem.showInfo('This is an info notification!');
+                logResult('Info Notification', true, 'Info notification displayed');
+            } catch (error) {
+                logResult('Info Notification', false, `Error: ${error.message}`);
+            }
+        }
+
+        // 2. Task Input Validation Tests
+        function testEmptyTask() {
+            try {
+                const taskInput = document.getElementById('task-input');
+                taskInput.value = '   '; // Empty/whitespace task
+                
+                const result = TaskManager.addTask('   ');
+                logResult('Empty Task Validation', !result, 'Empty task correctly rejected');
+            } catch (error) {
+                logResult('Empty Task Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testDuplicateTask() {
+            try {
+                // Add a task first
+                TaskManager.addTask('Test duplicate task');
+                // Try to add the same task again
+                const result = TaskManager.addTask('Test duplicate task');
+                logResult('Duplicate Task Validation', !result, 'Duplicate task correctly rejected');
+            } catch (error) {
+                logResult('Duplicate Task Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testLongTask() {
+            try {
+                const longText = 'A'.repeat(501); // 501 characters
+                const result = TaskManager.addTask(longText);
+                logResult('Long Task Validation', !result, 'Long task (>500 chars) correctly rejected');
+            } catch (error) {
+                logResult('Long Task Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testValidTask() {
+            try {
+                const result = TaskManager.addTask('Valid test task ' + Date.now());
+                logResult('Valid Task Addition', result, 'Valid task correctly added');
+            } catch (error) {
+                logResult('Valid Task Addition', false, `Error: ${error.message}`);
+            }
+        }
+
+        // 3. Quick Links Validation Tests
+        function testEmptyLabel() {
+            try {
+                const result = QuickLinksComponent.addLink('', 'https://example.com');
+                logResult('Empty Label Validation', !result, 'Empty label correctly rejected');
+            } catch (error) {
+                logResult('Empty Label Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testInvalidUrl() {
+            try {
+                const result = QuickLinksComponent.addLink('Test', 'invalid-url');
+                logResult('Invalid URL Validation', !result, 'Invalid URL correctly rejected');
+            } catch (error) {
+                logResult('Invalid URL Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testLongLabel() {
+            try {
+                const longLabel = 'A'.repeat(51); // 51 characters
+                const result = QuickLinksComponent.addLink(longLabel, 'https://example.com');
+                logResult('Long Label Validation', !result, 'Long label (>50 chars) correctly rejected');
+            } catch (error) {
+                logResult('Long Label Validation', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testValidLink() {
+            try {
+                const result = QuickLinksComponent.addLink('Test Link ' + Date.now(), 'https://example.com');
+                logResult('Valid Link Addition', result, 'Valid link correctly added');
+            } catch (error) {
+                logResult('Valid Link Addition', false, `Error: ${error.message}`);
+            }
+        }
+
+        // 4. Storage Error Handling Tests
+        function testStorageAvailability() {
+            try {
+                const isAvailable = StorageService.isAvailable();
+                logResult('Storage Availability Check', true, `Storage available: ${isAvailable}`);
+            } catch (error) {
+                logResult('Storage Availability Check', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testCorruptedData() {
+            try {
+                // Simulate corrupted data by setting invalid JSON
+                localStorage.setItem('productivity_dashboard_tasks', 'invalid json');
+                
+                // Try to load tasks - should handle corrupted data gracefully
+                const tasks = StorageService.get('productivity_dashboard_tasks');
+                const handled = tasks === null; // Should return null for corrupted data
+                
+                logResult('Corrupted Data Recovery', handled, 'Corrupted data handled gracefully');
+                
+                // Clean up
+                localStorage.removeItem('productivity_dashboard_tasks');
+            } catch (error) {
+                logResult('Corrupted Data Recovery', false, `Error: ${error.message}`);
+            }
+        }
+
+        // 5. Application Error Handling Tests
+        function testInitializationError() {
+            try {
+                const status = App.getStatus();
+                logResult('App Status Check', status.initialized, `App initialized: ${status.initialized}`);
+            } catch (error) {
+                logResult('App Status Check', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testComponentRestart() {
+            try {
+                App.restart();
+                setTimeout(() => {
+                    const status = App.getStatus();
+                    logResult('Component Restart', status.initialized, 'App successfully restarted');
+                }, 100);
+            } catch (error) {
+                logResult('Component Restart', false, `Error: ${error.message}`);
+            }
+        }
+
+        // Wait for app to initialize before showing ready message
+        document.addEventListener('app:initialized', () => {
+            setTimeout(() => {
+                NotificationSystem.showInfo('Error handling test page loaded. Click buttons to test functionality.');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

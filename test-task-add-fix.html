@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Add Fix Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 400px;
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .test-log {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-btn {
+            padding: 8px 12px;
+            margin: 3px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .test-btn:hover { background: #0056b3; }
+        .status { padding: 8px; margin: 5px 0; border-radius: 4px; font-weight: bold; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h4>🔧 Task Add Fix Test</h4>
+        
+        <div>
+            <button class="test-btn" onclick="runFullTest()">Run Full Test</button>
+            <button class="test-btn" onclick="testEventListeners()">Test Event Listeners</button>
+            <button class="test-btn" onclick="testTaskManagerDirect()">Test TaskManager Direct</button>
+            <button class="test-btn" onclick="clearTestLog()">Clear Log</button>
+        </div>
+        
+        <div id="test-status"></div>
+        <div class="test-log" id="test-log">Starting test...</div>
+        
+        <div style="margin-top: 15px;">
+            <h5>Quick Test:</h5>
+            <input type="text" id="quick-test-input" placeholder="Enter test task" style="width: 100%; padding: 5px; margin: 5px 0;">
+            <button class="test-btn" onclick="quickTest()" style="width: 100%;">Quick Add Test</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push(logEntry);
+            
+            const logDiv = document.getElementById('test-log');
+            logDiv.innerHTML = testLog.slice(-30).join('<br>');
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('test-status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function runFullTest() {
+            log('🚀 Starting full task add test...');
+            setStatus('Running tests...', 'info');
+            
+            // Test 1: Check if elements exist
+            log('Test 1: Checking DOM elements');
+            const taskInput = document.getElementById('task-input');
+            const addButton = document.getElementById('add-task');
+            const taskList = document.getElementById('task-list');
+            
+            if (!taskInput) {
+                log('❌ Task input not found');
+                setStatus('Task input missing', 'fail');
+                return;
+            }
+            if (!addButton) {
+                log('❌ Add button not found');
+                setStatus('Add button missing', 'fail');
+                return;
+            }
+            if (!taskList) {
+                log('❌ Task list not found');
+                setStatus('Task list missing', 'fail');
+                return;
+            }
+            log('✅ All DOM elements found');
+            
+            // Test 2: Check TaskManager availability
+            log('Test 2: Checking TaskManager availability');
+            if (typeof TaskManager === 'undefined') {
+                log('❌ TaskManager not available globally');
+                setStatus('TaskManager missing', 'fail');
+                return;
+            }
+            if (typeof TaskManager.addTask !== 'function') {
+                log('❌ TaskManager.addTask not a function');
+                setStatus('addTask method missing', 'fail');
+                return;
+            }
+            log('✅ TaskManager and addTask method available');
+            
+            // Test 3: Test direct TaskManager call
+            log('Test 3: Testing direct TaskManager.addTask');
+            const testText = 'Full test task ' + Date.now();
+            try {
+                const result = TaskManager.addTask(testText);
+                if (result) {
+                    log('✅ Direct TaskManager.addTask works');
+                } else {
+                    log('❌ Direct TaskManager.addTask returned false');
+                    setStatus('Direct add failed', 'fail');
+                    return;
+                }
+            } catch (error) {
+                log(`❌ Direct TaskManager.addTask error: ${error.message}`);
+                setStatus('Direct add error', 'fail');
+                return;
+            }
+            
+            // Test 4: Test UI interaction
+            log('Test 4: Testing UI interaction');
+            const uiTestText = 'UI test task ' + Date.now();
+            taskInput.value = uiTestText;
+            log(`Set input value: ${uiTestText}`);
+            
+            // Simulate button click
+            try {
+                addButton.click();
+                log('Button click executed');
+                
+                // Check if input was cleared
+                setTimeout(() => {
+                    if (taskInput.value === '') {
+                        log('✅ Input cleared after button click');
+                        setStatus('All tests passed!', 'pass');
+                    } else {
+                        log('❌ Input not cleared - button click may not have worked');
+                        setStatus('UI interaction failed', 'fail');
+                    }
+                }, 100);
+                
+            } catch (error) {
+                log(`❌ Button click error: ${error.message}`);
+                setStatus('Button click failed', 'fail');
+            }
+        }
+
+        function testEventListeners() {
+            log('🔍 Testing event listeners...');
+            
+            const addButton = document.getElementById('add-task');
+            if (!addButton) {
+                log('❌ Add button not found');
+                return;
+            }
+            
+            // Check if button has event listeners
+            const listeners = getEventListeners ? getEventListeners(addButton) : 'Cannot check listeners';
+            log(`Button listeners: ${JSON.stringify(listeners)}`);
+            
+            // Try to manually trigger the event handler
+            const taskInput = document.getElementById('task-input');
+            if (taskInput) {
+                taskInput.value = 'Event listener test ' + Date.now();
+                
+                // Create and dispatch click event
+                const clickEvent = new Event('click', { bubbles: true });
+                addButton.dispatchEvent(clickEvent);
+                log('Dispatched click event manually');
+                
+                setTimeout(() => {
+                    if (taskInput.value === '') {
+                        log('✅ Event listener working');
+                        setStatus('Event listeners working', 'pass');
+                    } else {
+                        log('❌ Event listener not working');
+                        setStatus('Event listeners not working', 'fail');
+                    }
+                }, 100);
+            }
+        }
+
+        function testTaskManagerDirect() {
+            log('🎯 Testing TaskManager directly...');
+            
+            if (typeof TaskManager === 'undefined') {
+                log('❌ TaskManager not available');
+                setStatus('TaskManager missing', 'fail');
+                return;
+            }
+            
+            // Get current task count
+            const initialCount = TaskManager.getTasks().length;
+            log(`Initial task count: ${initialCount}`);
+            
+            // Add a test task
+            const testText = 'Direct test ' + Date.now();
+            const result = TaskManager.addTask(testText);
+            
+            if (result) {
+                const newCount = TaskManager.getTasks().length;
+                log(`New task count: ${newCount}`);
+                
+                if (newCount === initialCount + 1) {
+                    log('✅ TaskManager.addTask working correctly');
+                    setStatus('TaskManager working', 'pass');
+                    
+                    // Clean up - remove the test task
+                    const tasks = TaskManager.getTasks();
+                    const testTask = tasks.find(t => t.text === testText);
+                    if (testTask) {
+                        TaskManager.deleteTask(testTask.id);
+                        log('Test task cleaned up');
+                    }
+                } else {
+                    log('❌ Task count not updated correctly');
+                    setStatus('Task count mismatch', 'fail');
+                }
+            } else {
+                log('❌ TaskManager.addTask returned false');
+                setStatus('TaskManager add failed', 'fail');
+            }
+        }
+
+        function quickTest() {
+            const input = document.getElementById('quick-test-input');
+            const text = input.value.trim();
+            
+            if (!text) {
+                log('❌ No text entered for quick test');
+                return;
+            }
+            
+            log(`Quick test with: ${text}`);
+            
+            if (typeof TaskManager !== 'undefined' && TaskManager.addTask) {
+                const result = TaskManager.addTask(text);
+                if (result) {
+                    input.value = '';
+                    log('✅ Quick test successful');
+                    setStatus('Quick test passed', 'pass');
+                } else {
+                    log('❌ Quick test failed');
+                    setStatus('Quick test failed', 'fail');
+                }
+            } else {
+                log('❌ TaskManager not available for quick test');
+                setStatus('TaskManager unavailable', 'fail');
+            }
+        }
+
+        function clearTestLog() {
+            testLog = [];
+            document.getElementById('test-log').innerHTML = 'Log cleared...';
+            document.getElementById('test-status').innerHTML = '';
+        }
+
+        // Capture console logs from the app
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            // Only log app-related messages to avoid spam
+            const message = args.join(' ');
+            if (message.includes('Task') || message.includes('Add') || message.includes('Button') || message.includes('click')) {
+                log(`App: ${message}`);
+            }
+        };
+
+        // Capture errors
+        window.addEventListener('error', function(e) {
+            log(`❌ JS Error: ${e.message} at line ${e.lineno}`);
+            setStatus('JavaScript error detected', 'fail');
+        });
+
+        // Wait for app to initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                log('🎬 Test environment ready');
+                setStatus('Ready for testing', 'info');
+            }, 1000);
+        });
+
+        // Auto-run basic test after app loads
+        setTimeout(() => {
+            if (typeof TaskManager !== 'undefined') {
+                log('✅ TaskManager detected, running basic test...');
+                testTaskManagerDirect();
+            } else {
+                log('❌ TaskManager not detected after 3 seconds');
+                setStatus('TaskManager not loaded', 'fail');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

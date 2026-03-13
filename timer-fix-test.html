@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Fix Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🕐 Timer Fix Test</h1>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2>Timer Component Test</h2>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-controls">
+                <button id="timer-start" class="btn btn-primary">Start</button>
+                <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                <button id="timer-reset" class="btn btn-secondary">Reset</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+            </div>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>Debug Info</h3>
+            <div id="debug-info">
+                <p>Timer State: <span id="timer-state">Stopped</span></p>
+                <p>Time Remaining: <span id="time-remaining">1500</span> seconds</p>
+                <p>Mode: <span id="current-mode">focus</span></p>
+                <p>Last Action: <span id="last-action">None</span></p>
+            </div>
+        </div>
+
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>Test Results</h3>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simplified timer implementation for testing
+        let timeRemaining = 1500; // 25 minutes in seconds
+        let isRunning = false;
+        let mode = 'focus';
+        let intervalId = null;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.style.cssText = `
+                padding: 8px 12px;
+                margin: 5px 0;
+                border-radius: 4px;
+                ${type === 'pass' ? 'background: #d4edda; color: #155724;' : 
+                  type === 'fail' ? 'background: #f8d7da; color: #721c24;' : 
+                  'background: #d1ecf1; color: #0c5460;'}
+            `;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('timer-display');
+            const stateSpan = document.getElementById('timer-state');
+            const timeSpan = document.getElementById('time-remaining');
+            const modeSpan = document.getElementById('current-mode');
+            
+            if (display) {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            if (stateSpan) stateSpan.textContent = isRunning ? 'Running' : 'Stopped';
+            if (timeSpan) timeSpan.textContent = timeRemaining;
+            if (modeSpan) modeSpan.textContent = mode;
+        }
+
+        function updateLastAction(action) {
+            const lastActionSpan = document.getElementById('last-action');
+            if (lastActionSpan) {
+                lastActionSpan.textContent = `${action} at ${new Date().toLocaleTimeString()}`;
+            }
+        }
+
+        function start() {
+            log('🚀 Start button clicked', 'info');
+            updateLastAction('Start');
+            
+            if (!isRunning && timeRemaining > 0) {
+                isRunning = true;
+                intervalId = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        updateDisplay();
+                        
+                        if (timeRemaining === 0) {
+                            log('⏰ Timer completed!', 'pass');
+                            stop();
+                        }
+                    }
+                }, 1000);
+                
+                updateDisplay();
+                log('✅ Timer started successfully', 'pass');
+            } else if (timeRemaining === 0) {
+                log('⚠️ Cannot start - timer is at 0:00', 'fail');
+            } else if (isRunning) {
+                log('⚠️ Timer is already running', 'info');
+            }
+        }
+
+        function stop() {
+            log('⏸️ Stop button clicked', 'info');
+            updateLastAction('Stop');
+            
+            if (isRunning) {
+                isRunning = false;
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+                updateDisplay();
+                log('✅ Timer stopped successfully', 'pass');
+            } else {
+                log('⚠️ Timer is not running', 'info');
+            }
+        }
+
+        function reset() {
+            log('🔄 Reset button clicked', 'info');
+            updateLastAction('Reset');
+            
+            stop();
+            timeRemaining = 1500; // 25 minutes
+            updateDisplay();
+            log('✅ Timer reset to 25:00', 'pass');
+        }
+
+        function toggleMode() {
+            log('🔄 Mode toggle clicked', 'info');
+            updateLastAction('Mode Toggle');
+            
+            const oldMode = mode;
+            mode = mode === 'focus' ? 'pomodoro' : 'focus';
+            
+            const modeToggle = document.getElementById('mode-toggle');
+            if (modeToggle) {
+                modeToggle.textContent = mode === 'focus' ? 'Switch to Pomodoro' : 'Switch to Focus';
+            }
+            
+            reset(); // Reset timer when switching modes
+            updateDisplay();
+            log(`✅ Mode switched from ${oldMode} to ${mode}`, 'pass');
+        }
+
+        // Set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Setting up timer event listeners...', 'info');
+            
+            const startBtn = document.getElementById('timer-start');
+            const stopBtn = document.getElementById('timer-stop');
+            const resetBtn = document.getElementById('timer-reset');
+            const modeToggle = document.getElementById('mode-toggle');
+            
+            if (startBtn) {
+                startBtn.addEventListener('click', start);
+                log('✅ Start button listener attached', 'pass');
+            } else {
+                log('❌ Start button not found', 'fail');
+            }
+            
+            if (stopBtn) {
+                stopBtn.addEventListener('click', stop);
+                log('✅ Stop button listener attached', 'pass');
+            } else {
+                log('❌ Stop button not found', 'fail');
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', reset);
+                log('✅ Reset button listener attached', 'pass');
+            } else {
+                log('❌ Reset button not found', 'fail');
+            }
+            
+            if (modeToggle) {
+                modeToggle.addEventListener('click', toggleMode);
+                log('✅ Mode toggle listener attached', 'pass');
+            } else {
+                log('❌ Mode toggle not found', 'fail');
+            }
+            
+            // Initial display update
+            updateDisplay();
+            log('🎯 Timer test ready! Click the buttons above to test functionality.', 'pass');
+            
+            // Test basic functionality
+            setTimeout(() => {
+                log('🧪 Running automatic tests...', 'info');
+                
+                // Test format function
+                const testTime = 125; // 2:05
+                const minutes = Math.floor(testTime / 60);
+                const seconds = testTime % 60;
+                const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (formatted === '02:05') {
+                    log('✅ Time formatting works correctly', 'pass');
+                } else {
+                    log(`❌ Time formatting failed: got ${formatted}, expected 02:05`, 'fail');
+                }
+                
+                // Test setInterval
+                let testCounter = 0;
+                const testInterval = setInterval(() => {
+                    testCounter++;
+                    if (testCounter >= 2) {
+                        clearInterval(testInterval);
+                        log('✅ setInterval functionality works', 'pass');
+                    }
+                }, 100);
+                
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

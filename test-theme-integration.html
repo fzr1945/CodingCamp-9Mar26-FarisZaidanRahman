@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Integration Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: white;
+            border: 2px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 14px;
+        }
+        [data-theme="dark"] .test-panel {
+            background: #333;
+            color: white;
+            border-color: #666;
+        }
+        .test-result {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        [data-theme="dark"] .pass { background-color: #1e4620; color: #d4edda; }
+        [data-theme="dark"] .fail { background-color: #4a1e1e; color: #f8d7da; }
+        button { margin: 2px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                🌙
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Test Panel -->
+    <div class="test-panel">
+        <h3>Theme Persistence Test</h3>
+        <div id="test-results"></div>
+        <button onclick="runTests()">Run Tests</button>
+        <button onclick="clearTheme()">Clear Theme</button>
+        <button onclick="location.reload()">Reload Page</button>
+        <div style="margin-top: 10px; font-size: 12px;">
+            <strong>Manual Test:</strong><br>
+            1. Toggle theme<br>
+            2. Reload page<br>
+            3. Verify theme persisted
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function addTestResult(name, passed, message) {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `<strong>${name}:</strong> ${passed ? 'PASS' : 'FAIL'}<br><small>${message}</small>`;
+            resultsDiv.appendChild(div);
+        }
+
+        function runTests() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Test 1: Storage Service availability
+            const storageAvailable = StorageService.isAvailable();
+            addTestResult('Storage Available', storageAvailable, 
+                storageAvailable ? 'Local Storage working' : 'Local Storage not available');
+            
+            if (!storageAvailable) return;
+            
+            // Test 2: Theme Manager initialization
+            const currentTheme = ThemeManager.getCurrentTheme();
+            addTestResult('Theme Manager Init', currentTheme === 'light' || currentTheme === 'dark', 
+                `Current theme: ${currentTheme}`);
+            
+            // Test 3: Theme toggle functionality
+            const initialTheme = ThemeManager.getCurrentTheme();
+            ThemeManager.toggleTheme();
+            const toggledTheme = ThemeManager.getCurrentTheme();
+            const toggleWorked = initialTheme !== toggledTheme;
+            addTestResult('Theme Toggle', toggleWorked, 
+                `${initialTheme} → ${toggledTheme}`);
+            
+            // Test 4: Storage persistence
+            const storedTheme = StorageService.get('productivity_dashboard_theme');
+            addTestResult('Theme Stored', storedTheme === toggledTheme, 
+                `Stored: ${storedTheme}, Current: ${toggledTheme}`);
+            
+            // Test 5: DOM application
+            const bodyTheme = document.body.getAttribute('data-theme');
+            const expectedBodyTheme = toggledTheme === 'dark' ? 'dark' : null;
+            addTestResult('DOM Applied', bodyTheme === expectedBodyTheme, 
+                `Body data-theme: ${bodyTheme || 'null'}`);
+            
+            // Test 6: Button icon update
+            const themeButton = document.getElementById('theme-toggle');
+            const expectedIcon = toggledTheme === 'dark' ? '☀️' : '🌙';
+            addTestResult('Button Icon', themeButton.textContent === expectedIcon, 
+                `Icon: ${themeButton.textContent}, Expected: ${expectedIcon}`);
+        }
+
+        function clearTheme() {
+            localStorage.removeItem('productivity_dashboard_theme');
+            addTestResult('Theme Cleared', true, 'Theme removed from storage');
+        }
+
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const savedTheme = StorageService.get('productivity_dashboard_theme');
+                if (savedTheme) {
+                    addTestResult('Page Load', true, `Loaded theme: ${savedTheme}`);
+                } else {
+                    addTestResult('Page Load', true, 'No saved theme (using default)');
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

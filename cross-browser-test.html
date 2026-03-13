@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Browser Compatibility Test - Productivity Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .pass { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .browser-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-test {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .test-actions {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #test-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌐 Cross-Browser Compatibility Test Suite</h1>
+    <p>This page tests the Productivity Dashboard's compatibility across different browsers and validates core functionality.</p>
+
+    <div class="browser-info">
+        <h3>Browser Information</h3>
+        <div id="browser-details"></div>
+    </div>
+
+    <div class="test-actions">
+        <button onclick="runAllTests()">🧪 Run All Tests</button>
+        <button onclick="testLocalStorage()">💾 Test Local Storage</button>
+        <button onclick="testResponsiveDesign()">📱 Test Responsive Design</button>
+        <button onclick="testPerformance()">⚡ Test Performance</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+
+    <div class="test-container">
+        <h3>Test Results</h3>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-test">
+            <h4>🔧 Core JavaScript Features</h4>
+            <div id="js-features"></div>
+        </div>
+        <div class="feature-test">
+            <h4>🎨 CSS Features</h4>
+            <div id="css-features"></div>
+        </div>
+        <div class="feature-test">
+            <h4>🌐 Web APIs</h4>
+            <div id="web-apis"></div>
+        </div>
+        <div class="feature-test">
+            <h4>📱 Responsive Features</h4>
+            <div id="responsive-features"></div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h3>🔗 Dashboard Integration Test</h3>
+        <p>Click the button below to open the actual dashboard in a new tab for manual testing:</p>
+        <button onclick="openDashboard()">🚀 Open Dashboard for Testing</button>
+        <div id="integration-results"></div>
+    </div>
+
+    <script>
+        // Browser detection and information
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown';
+            let version = 'Unknown';
+
+            if (ua.includes('Chrome') && !ua.includes('Edg')) {
+                browser = 'Chrome';
+                version = ua.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Firefox')) {
+                browser = 'Firefox';
+                version = ua.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Edg')) {
+                browser = 'Edge';
+                version = ua.match(/Edg\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                browser = 'Safari';
+                version = ua.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+            }
+
+            return {
+                browser,
+                version,
+                userAgent: ua,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine
+            };
+        }
+
+        // Display browser information
+        function displayBrowserInfo() {
+            const info = getBrowserInfo();
+            const container = document.getElementById('browser-details');
+            
+            container.innerHTML = `
+                <strong>Browser:</strong> ${info.browser} ${info.version}<br>
+                <strong>Platform:</strong> ${info.platform}<br>
+                <strong>Language:</strong> ${info.language}<br>
+                <strong>Cookies Enabled:</strong> ${info.cookieEnabled ? '✅' : '❌'}<br>
+                <strong>Online:</strong> ${info.onLine ? '✅' : '❌'}<br>
+                <strong>Screen Resolution:</strong> ${screen.width}x${screen.height}<br>
+                <strong>Viewport:</strong> ${window.innerWidth}x${window.innerHeight}
+            `;
+        }
+
+        // Test result logging
+        function logResult(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `[${timestamp}] ${message}`;
+            results.appendChild(resultDiv);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        // Core JavaScript feature tests
+        function testJavaScriptFeatures() {
+            logResult('🔧 Testing Core JavaScript Features...', 'info');
+            
+            const features = {
+                'ES6 Arrow Functions': () => (() => true)(),
+                'ES6 Template Literals': () => `test` === 'test',
+                'ES6 Destructuring': () => { const [a] = [1]; return a === 1; },
+                'ES6 Spread Operator': () => [...[1, 2]].length === 2,
+                'ES6 Classes': () => { class Test {} return typeof Test === 'function'; },
+                'Promises': () => typeof Promise !== 'undefined',
+                'Async/Await': () => { async function test() {} return test.constructor.name === 'AsyncFunction'; },
+                'JSON Support': () => typeof JSON !== 'undefined',
+                'Date Object': () => typeof Date !== 'undefined',
+                'Regular Expressions': () => /test/.test('test'),
+                'Array Methods': () => [1,2,3].map(x => x).length === 3,
+                'Object Methods': () => typeof Object.keys !== 'undefined'
+            };
+
+            let passed = 0;
+            let total = Object.keys(features).length;
+
+            for (const [name, test] of Object.entries(features)) {
+                try {
+                    const result = test();
+                    if (result) {
+                        logResult(`✅ ${name}: Supported`, 'pass');
+                        passed++;
+                    } else {
+                        logResult(`❌ ${name}: Not supported`, 'fail');
+                    }
+                } catch (error) {
+                    logResult(`❌ ${name}: Error - ${error.message}`, 'fail');
+                }
+            }
+
+            document.getElementById('js-features').innerHTML = `
+                <strong>JavaScript Features:</strong> ${passed}/${total} supported<br>
+                <div style="background: ${passed === total ? '#d4edda' : passed > total * 0.8 ? '#fff3cd' : '#f8d7da'}; 
+                     padding: 5px; border-radius: 3px; margin-top: 5px;">
+                    ${passed === total ? '✅ All features supported' : 
+                      passed > total * 0.8 ? '⚠️ Most features supported' : '❌ Limited support'}
+                </div>
+            `;
+
+            return passed / total;
+        }
+
+        // CSS feature tests
+        function testCSSFeatures() {
+            logResult('🎨 Testing CSS Features...', 'info');
+            
+            const testElement = document.createElement('div');
+            document.body.appendChild(testElement);
+            
+            const features = {
+                'CSS Grid': () => CSS.supports('display', 'grid'),
+                'CSS Flexbox': () => CSS.supports('display', 'flex'),
+                'CSS Variables': () => CSS.supports('color', 'var(--test)'),
+                'CSS Transforms': () => CSS.supports('transform', 'translateX(10px)'),
+                'CSS Transitions': () => CSS.supports('transition', 'all 0.3s'),
+                'CSS Animations': () => CSS.supports('animation', 'test 1s'),
+                'CSS Border Radius': () => CSS.supports('border-radius', '5px'),
+                'CSS Box Shadow': () => CSS.supports('box-shadow', '0 0 5px black'),
+                'CSS Media Queries': () => window.matchMedia !== undefined,
+                'CSS Calc': () => CSS.supports('width', 'calc(100% - 10px)')
+            };
+
+            let passed = 0;
+            let total = Object.keys(features).length;
+
+            for (const [name, test] of Object.entries(features)) {
+                try {
+                    const result = test();
+                    if (result) {
+                        logResult(`✅ ${name}: Supported`, 'pass');
+                        passed++;
+                    } else {
+                        logResult(`❌ ${name}: Not supported`, 'fail');
+                    }
+                } catch (error) {
+                    logResult(`❌ ${name}: Error - ${error.message}`, 'fail');
+                }
+            }
+
+            document.body.removeChild(testElement);
+
+            document.getElementById('css-features').innerHTML = `
+                <strong>CSS Features:</strong> ${passed}/${total} supported<br>
+                <div style="background: ${passed === total ? '#d4edda' : passed > total * 0.8 ? '#fff3cd' : '#f8d7da'}; 
+                     padding: 5px; border-radius: 3px; margin-top: 5px;">
+                    ${passed === total ? '✅ All features supported' : 
+                      passed > total * 0.8 ? '⚠️ Most features supported' : '❌ Limited support'}
+                </div>
+            `;
+
+            return passed / total;
+        }
+
+        // Web API tests
+        function testWebAPIs() {
+            logResult('🌐 Testing Web APIs...', 'info');
+            
+            const apis = {
+                'Local Storage': () => typeof localStorage !== 'undefined',
+                'Session Storage': () => typeof sessionStorage !== 'undefined',
+                'Fetch API': () => typeof fetch !== 'undefined',
+                'URL Constructor': () => typeof URL !== 'undefined',
+                'Custom Events': () => typeof CustomEvent !== 'undefined',
+                'Performance API': () => typeof performance !== 'undefined',
+                'Request Animation Frame': () => typeof requestAnimationFrame !== 'undefined',
+                'Intersection Observer': () => typeof IntersectionObserver !== 'undefined',
+                'Mutation Observer': () => typeof MutationObserver !== 'undefined',
+                'Geolocation': () => typeof navigator.geolocation !== 'undefined'
+            };
+
+            let passed = 0;
+            let total = Object.keys(apis).length;
+
+            for (const [name, test] of Object.entries(apis)) {
+                try {
+                    const result = test();
+                    if (result) {
+                        logResult(`✅ ${name}: Available`, 'pass');
+                        passed++;
+                    } else {
+                        logResult(`❌ ${name}: Not available`, 'fail');
+                    }
+                } catch (error) {
+                    logResult(`❌ ${name}: Error - ${error.message}`, 'fail');
+                }
+            }
+
+            document.getElementById('web-apis').innerHTML = `
+                <strong>Web APIs:</strong> ${passed}/${total} available<br>
+                <div style="background: ${passed === total ? '#d4edda' : passed > total * 0.8 ? '#fff3cd' : '#f8d7da'}; 
+                     padding: 5px; border-radius: 3px; margin-top: 5px;">
+                    ${passed === total ? '✅ All APIs available' : 
+                      passed > total * 0.8 ? '⚠️ Most APIs available' : '❌ Limited API support'}
+                </div>
+            `;
+
+            return passed / total;
+        }
+
+        // Local Storage functionality test
+        function testLocalStorage() {
+            logResult('💾 Testing Local Storage Functionality...', 'info');
+            
+            try {
+                // Test basic storage operations
+                const testKey = 'cross_browser_test';
+                const testData = {
+                    string: 'test string',
+                    number: 42,
+                    boolean: true,
+                    array: [1, 2, 3],
+                    object: { nested: 'value' },
+                    timestamp: Date.now()
+                };
+
+                // Test write
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                logResult('✅ Local Storage write: Success', 'pass');
+
+                // Test read
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                if (JSON.stringify(retrieved) === JSON.stringify(testData)) {
+                    logResult('✅ Local Storage read: Success', 'pass');
+                } else {
+                    logResult('❌ Local Storage read: Data mismatch', 'fail');
+                }
+
+                // Test remove
+                localStorage.removeItem(testKey);
+                if (localStorage.getItem(testKey) === null) {
+                    logResult('✅ Local Storage remove: Success', 'pass');
+                } else {
+                    logResult('❌ Local Storage remove: Failed', 'fail');
+                }
+
+                // Test storage events (if multiple tabs)
+                window.addEventListener('storage', function(e) {
+                    logResult(`📡 Storage event detected: ${e.key}`, 'info');
+                });
+
+                // Test quota (approximate)
+                let quotaTest = '';
+                try {
+                    for (let i = 0; i < 1000; i++) {
+                        quotaTest += 'x'.repeat(1000); // 1MB chunks
+                        localStorage.setItem('quota_test', quotaTest);
+                    }
+                    localStorage.removeItem('quota_test');
+                    logResult('✅ Local Storage quota: > 1MB available', 'pass');
+                } catch (quotaError) {
+                    localStorage.removeItem('quota_test');
+                    logResult(`⚠️ Local Storage quota: Limited (${quotaError.name})`, 'warning');
+                }
+
+            } catch (error) {
+                logResult(`❌ Local Storage test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        // Responsive design test
+        function testResponsiveDesign() {
+            logResult('📱 Testing Responsive Design Features...', 'info');
+            
+            const breakpoints = [
+                { name: 'Mobile', width: 480 },
+                { name: 'Tablet', width: 768 },
+                { name: 'Desktop', width: 1024 },
+                { name: 'Large Desktop', width: 1200 }
+            ];
+
+            let results = [];
+
+            breakpoints.forEach(bp => {
+                try {
+                    const mediaQuery = window.matchMedia(`(max-width: ${bp.width}px)`);
+                    const matches = mediaQuery.matches;
+                    results.push(`${bp.name} (≤${bp.width}px): ${matches ? '✅ Active' : '❌ Inactive'}`);
+                    
+                    // Test media query listener
+                    mediaQuery.addListener((e) => {
+                        logResult(`📱 Breakpoint change: ${bp.name} ${e.matches ? 'activated' : 'deactivated'}`, 'info');
+                    });
+                } catch (error) {
+                    results.push(`${bp.name}: ❌ Error - ${error.message}`);
+                }
+            });
+
+            results.forEach(result => logResult(result, 'info'));
+
+            // Test viewport meta tag
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            if (viewportMeta) {
+                logResult('✅ Viewport meta tag: Present', 'pass');
+                logResult(`📱 Viewport content: ${viewportMeta.content}`, 'info');
+            } else {
+                logResult('❌ Viewport meta tag: Missing', 'fail');
+            }
+
+            // Test CSS media queries support
+            if (typeof window.matchMedia !== 'undefined') {
+                logResult('✅ Media Queries: Supported', 'pass');
+            } else {
+                logResult('❌ Media Queries: Not supported', 'fail');
+            }
+
+            document.getElementById('responsive-features').innerHTML = `
+                <strong>Current Viewport:</strong> ${window.innerWidth}x${window.innerHeight}<br>
+                <strong>Device Pixel Ratio:</strong> ${window.devicePixelRatio || 1}<br>
+                <strong>Orientation:</strong> ${window.innerWidth > window.innerHeight ? 'Landscape' : 'Portrait'}<br>
+                <div style="background: #e9ecef; padding: 5px; border-radius: 3px; margin-top: 5px;">
+                    Resize the browser window to test responsive breakpoints
+                </div>
+            `;
+        }
+
+        // Performance test
+        function testPerformance() {
+            logResult('⚡ Testing Performance Features...', 'info');
+            
+            const startTime = performance.now();
+
+            // Test Performance API
+            if (typeof performance !== 'undefined') {
+                logResult('✅ Performance API: Available', 'pass');
+                
+                // Test timing methods
+                const timingMethods = ['now', 'mark', 'measure'];
+                timingMethods.forEach(method => {
+                    if (typeof performance[method] === 'function') {
+                        logResult(`✅ performance.${method}(): Available`, 'pass');
+                    } else {
+                        logResult(`❌ performance.${method}(): Not available`, 'fail');
+                    }
+                });
+
+                // Test memory info (Chrome only)
+                if (performance.memory) {
+                    logResult(`📊 Memory usage: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)}MB`, 'info');
+                } else {
+                    logResult('⚠️ Memory info: Not available (Chrome only)', 'warning');
+                }
+
+                // Test navigation timing
+                if (performance.navigation) {
+                    logResult(`🔄 Navigation type: ${performance.navigation.type}`, 'info');
+                } else {
+                    logResult('⚠️ Navigation timing: Not available', 'warning');
+                }
+            } else {
+                logResult('❌ Performance API: Not available', 'fail');
+            }
+
+            // Test requestAnimationFrame
+            if (typeof requestAnimationFrame !== 'undefined') {
+                logResult('✅ requestAnimationFrame: Available', 'pass');
+                
+                // Test frame rate
+                let frameCount = 0;
+                const frameStart = performance.now();
+                
+                function countFrames() {
+                    frameCount++;
+                    if (performance.now() - frameStart < 1000) {
+                        requestAnimationFrame(countFrames);
+                    } else {
+                        logResult(`📊 Estimated FPS: ~${frameCount}`, 'info');
+                    }
+                }
+                requestAnimationFrame(countFrames);
+            } else {
+                logResult('❌ requestAnimationFrame: Not available', 'fail');
+            }
+
+            const endTime = performance.now();
+            logResult(`⏱️ Performance test completed in ${(endTime - startTime).toFixed(2)}ms`, 'info');
+        }
+
+        // Run all tests
+        function runAllTests() {
+            clearResults();
+            logResult('🚀 Starting Cross-Browser Compatibility Test Suite...', 'info');
+            
+            const jsScore = testJavaScriptFeatures();
+            const cssScore = testCSSFeatures();
+            const apiScore = testWebAPIs();
+            
+            testLocalStorage();
+            testResponsiveDesign();
+            testPerformance();
+            
+            const overallScore = (jsScore + cssScore + apiScore) / 3;
+            const scorePercent = Math.round(overallScore * 100);
+            
+            logResult(`📊 Overall Compatibility Score: ${scorePercent}%`, 
+                scorePercent >= 90 ? 'pass' : scorePercent >= 70 ? 'warning' : 'fail');
+            
+            if (scorePercent >= 90) {
+                logResult('🎉 Excellent browser compatibility! Dashboard should work perfectly.', 'pass');
+            } else if (scorePercent >= 70) {
+                logResult('⚠️ Good compatibility with minor limitations. Dashboard should work well.', 'warning');
+            } else {
+                logResult('❌ Limited compatibility. Dashboard may have issues in this browser.', 'fail');
+            }
+        }
+
+        // Open dashboard for manual testing
+        function openDashboard() {
+            const dashboardWindow = window.open('index.html', '_blank');
+            if (dashboardWindow) {
+                logResult('🚀 Dashboard opened in new tab for manual testing', 'info');
+                document.getElementById('integration-results').innerHTML = `
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 4px; margin-top: 10px;">
+                        <h4>Manual Testing Checklist:</h4>
+                        <ul style="text-align: left;">
+                            <li>✅ Page loads within 2 seconds</li>
+                            <li>✅ Greeting displays with correct time</li>
+                            <li>✅ Timer starts, stops, and resets properly</li>
+                            <li>✅ Tasks can be added, edited, and deleted</li>
+                            <li>✅ Quick links can be added and opened</li>
+                            <li>✅ Theme switching works smoothly</li>
+                            <li>✅ Data persists after page refresh</li>
+                            <li>✅ Responsive design works on different screen sizes</li>
+                            <li>✅ All interactions respond within 100ms</li>
+                            <li>✅ No console errors or warnings</li>
+                        </ul>
+                        <p><strong>Test each feature and verify it works as expected in your browser.</strong></p>
+                    </div>
+                `;
+            } else {
+                logResult('❌ Failed to open dashboard (popup blocked?)', 'fail');
+            }
+        }
+
+        // Clear test results
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            displayBrowserInfo();
+            logResult('🌐 Cross-Browser Test Suite Ready', 'info');
+            logResult('Click "Run All Tests" to begin comprehensive testing', 'info');
+        });
+
+        // Handle window resize for responsive testing
+        window.addEventListener('resize', function() {
+            document.getElementById('responsive-features').innerHTML = `
+                <strong>Current Viewport:</strong> ${window.innerWidth}x${window.innerHeight}<br>
+                <strong>Device Pixel Ratio:</strong> ${window.devicePixelRatio || 1}<br>
+                <strong>Orientation:</strong> ${window.innerWidth > window.innerHeight ? 'Landscape' : 'Portrait'}<br>
+                <div style="background: #e9ecef; padding: 5px; border-radius: 3px; margin-top: 5px;">
+                    Window resized - testing responsive breakpoints
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

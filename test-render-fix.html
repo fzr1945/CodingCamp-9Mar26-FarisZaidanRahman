@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Render Fix</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 350px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .test-btn {
+            padding: 10px 15px;
+            margin: 5px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .test-btn:hover { background: rgba(255,255,255,0.3); }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 6px; 
+            font-weight: bold;
+            background: rgba(255,255,255,0.1);
+        }
+        .test-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .test-input::placeholder { color: rgba(255,255,255,0.7); }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h4>✅ Test Render Fix</h4>
+        
+        <div>
+            <button class="test-btn" onclick="testTaskRender()">🔍 Test Task Render</button>
+            <button class="test-btn" onclick="testLinkRender()">🔗 Test Link Render</button>
+            <button class="test-btn" onclick="forceRenderAll()">🔄 Force Render All</button>
+        </div>
+        
+        <div id="test-status"></div>
+        
+        <div style="margin-top: 15px;">
+            <h5 style="margin: 0 0 10px 0;">Quick Add Test:</h5>
+            <input type="text" class="test-input" id="quick-task" placeholder="Test task">
+            <button class="test-btn" onclick="quickAddTask()" style="width: 100%;">Add Task</button>
+            
+            <input type="text" class="test-input" id="quick-link-name" placeholder="Link name">
+            <input type="text" class="test-input" id="quick-link-url" placeholder="https://example.com">
+            <button class="test-btn" onclick="quickAddLink()" style="width: 100%;">Add Link</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('test-status');
+            statusDiv.innerHTML = `<div class="status">${message}</div>`;
+        }
+
+        function testTaskRender() {
+            console.log('🔍 Testing task render...');
+            
+            if (typeof TaskManager === 'undefined') {
+                setStatus('❌ TaskManager not available');
+                return;
+            }
+            
+            const tasks = TaskManager.getTasks();
+            const taskList = document.getElementById('task-list');
+            const domCount = taskList ? taskList.children.length : 0;
+            
+            console.log(`Tasks in memory: ${tasks.length}`);
+            console.log(`Tasks in DOM: ${domCount}`);
+            
+            if (tasks.length === domCount) {
+                setStatus(`✅ Tasks synced: ${tasks.length} in memory, ${domCount} in DOM`);
+            } else {
+                setStatus(`⚠️ Mismatch: ${tasks.length} in memory, ${domCount} in DOM`);
+                
+                // Force render
+                if (typeof TaskManager.render === 'function') {
+                    TaskManager.render();
+                    setTimeout(() => {
+                        const newDomCount = taskList ? taskList.children.length : 0;
+                        setStatus(`🔄 After render: ${newDomCount} in DOM`);
+                    }, 100);
+                }
+            }
+        }
+
+        function testLinkRender() {
+            console.log('🔗 Testing link render...');
+            
+            if (typeof QuickLinksComponent === 'undefined') {
+                setStatus('❌ QuickLinksComponent not available');
+                return;
+            }
+            
+            const links = QuickLinksComponent.getLinks();
+            const container = document.getElementById('links-container');
+            const domCount = container ? container.children.length : 0;
+            
+            console.log(`Links in memory: ${links.length}`);
+            console.log(`Links in DOM: ${domCount}`);
+            
+            if (links.length === domCount) {
+                setStatus(`✅ Links synced: ${links.length} in memory, ${domCount} in DOM`);
+            } else {
+                setStatus(`⚠️ Mismatch: ${links.length} in memory, ${domCount} in DOM`);
+                
+                // Force render
+                if (typeof QuickLinksComponent.render === 'function') {
+                    QuickLinksComponent.render();
+                    setTimeout(() => {
+                        const newDomCount = container ? container.children.length : 0;
+                        setStatus(`🔄 After render: ${newDomCount} in DOM`);
+                    }, 100);
+                }
+            }
+        }
+
+        function forceRenderAll() {
+            console.log('🔄 Force rendering all components...');
+            
+            if (typeof TaskManager !== 'undefined' && typeof TaskManager.render === 'function') {
+                TaskManager.render();
+                console.log('✅ TaskManager render called');
+            }
+            
+            if (typeof QuickLinksComponent !== 'undefined' && typeof QuickLinksComponent.render === 'function') {
+                QuickLinksComponent.render();
+                console.log('✅ QuickLinksComponent render called');
+            }
+            
+            setTimeout(() => {
+                testTaskRender();
+                setTimeout(() => testLinkRender(), 100);
+            }, 200);
+        }
+
+        function quickAddTask() {
+            const input = document.getElementById('quick-task');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            console.log(`Adding task: "${text}"`);
+            
+            if (typeof TaskManager !== 'undefined' && TaskManager.addTask) {
+                const result = TaskManager.addTask(text);
+                if (result) {
+                    input.value = '';
+                    setStatus(`✅ Task "${text}" added`);
+                    
+                    // Check if it appears in DOM
+                    setTimeout(() => {
+                        testTaskRender();
+                    }, 200);
+                } else {
+                    setStatus('❌ Task add failed');
+                }
+            }
+        }
+
+        function quickAddLink() {
+            const nameInput = document.getElementById('quick-link-name');
+            const urlInput = document.getElementById('quick-link-url');
+            
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+            
+            if (!name || !url) return;
+            
+            console.log(`Adding link: "${name}" -> "${url}"`);
+            
+            if (typeof QuickLinksComponent !== 'undefined' && QuickLinksComponent.addLink) {
+                const result = QuickLinksComponent.addLink(name, url);
+                if (result) {
+                    nameInput.value = '';
+                    urlInput.value = '';
+                    setStatus(`✅ Link "${name}" added`);
+                    
+                    // Check if it appears in DOM
+                    setTimeout(() => {
+                        testLinkRender();
+                    }, 200);
+                } else {
+                    setStatus('❌ Link add failed');
+                }
+            }
+        }
+
+        // Auto-test when app is ready
+        document.addEventListener('app:initialized', function() {
+            console.log('✅ App initialized, running auto-test...');
+            setTimeout(() => {
+                forceRenderAll();
+            }, 1000);
+        });
+
+        // Enhanced logging
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('render') || message.includes('Render') || 
+                message.includes('Task') || message.includes('Link')) {
+                // Show important messages in status
+                if (message.includes('✅') || message.includes('❌')) {
+                    setStatus(message);
+                }
+            }
+        };
+    </script>
+</body>
+</html>

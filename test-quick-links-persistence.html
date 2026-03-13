@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Links Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        button { margin: 5px; padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <h1>Quick Links Persistence Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Results</h3>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Manual Test</h3>
+        <p>1. Add a link below</p>
+        <p>2. Refresh the page</p>
+        <p>3. Verify the link persists</p>
+        
+        <div>
+            <input type="text" id="link-label" placeholder="Link Label" value="Test Link">
+            <input type="text" id="link-url" placeholder="URL" value="https://example.com">
+            <button id="add-link">Add Link</button>
+        </div>
+        
+        <div id="links-container" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        // Include the Storage Service and Quick Links Component from app.js
+        // Storage Service Module
+        const StorageService = (() => {
+            'use strict';
+            
+            function isAvailable() {
+                try {
+                    const test = '__storage_test__';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) {
+                    console.warn('Local Storage is not available');
+                    return false;
+                }
+            }
+            
+            function get(key) {
+                if (!isAvailable()) return null;
+                
+                try {
+                    const data = localStorage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    console.error(`Failed to load data for key: ${key}`, e);
+                    return null;
+                }
+            }
+            
+            function set(key, value) {
+                if (!isAvailable()) return false;
+                
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError') {
+                        console.error('Storage quota exceeded');
+                    } else {
+                        console.error(`Failed to save data for key: ${key}`, e);
+                    }
+                    return false;
+                }
+            }
+            
+            function remove(key) {
+                if (!isAvailable()) return;
+                
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    console.error(`Failed to remove data for key: ${key}`, e);
+                }
+            }
+            
+            function clear() {
+                if (!isAvailable()) return;
+                
+                try {
+                    localStorage.clear();
+                } catch (e) {
+                    console.error('Failed to clear storage', e);
+                }
+            }
+            
+            return {
+                get,
+                set,
+                remove,
+                clear,
+                isAvailable
+            };
+        })();
+
+        const STORAGE_KEYS = {
+            LINKS: 'productivity_dashboard_links'
+        };
+
+        // Quick Links Component Module
+        const QuickLinksComponent = (() => {
+            'use strict';
+            
+            let links = [];
+            
+            function init() {
+                load();
+                setupEventListeners();
+                render();
+            }
+            
+            function setupEventListeners() {
+                const addBtn = document.getElementById('add-link');
+                if (addBtn) addBtn.addEventListener('click', handleAddLink);
+            }
+            
+            function handleAddLink() {
+                const labelInput = document.getElementById('link-label');
+                const urlInput = document.getElementById('link-url');
+                
+                if (labelInput && urlInput && labelInput.value.trim() && urlInput.value.trim()) {
+                    if (isValidUrl(urlInput.value.trim())) {
+                        addLink(labelInput.value.trim(), urlInput.value.trim());
+                        labelInput.value = '';
+                        urlInput.value = '';
+                    } else {
+                        alert('Please enter a valid URL (must start with http:// or https://)');
+                    }
+                }
+            }
+            
+            function isValidUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+                } catch {
+                    return false;
+                }
+            }
+            
+            function addLink(label, url) {
+                if (!label.trim() || !url.trim()) return;
+                
+                const link = {
+                    id: Date.now().toString(),
+                    label: label.trim(),
+                    url: url.trim()
+                };
+                
+                links.push(link);
+                save();
+                render();
+            }
+            
+            function deleteLink(id) {
+                links = links.filter(l => l.id !== id);
+                save();
+                render();
+            }
+            
+            function openLink(url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+            
+            function render() {
+                const container = document.getElementById('links-container');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                links.forEach(link => {
+                    const linkDiv = document.createElement('div');
+                    linkDiv.className = 'link-item';
+                    
+                    linkDiv.innerHTML = `
+                        <button class="link-button" onclick="QuickLinksComponent.openLink('${escapeHtml(link.url)}')">
+                            ${escapeHtml(link.label)}
+                        </button>
+                        <button class="link-delete" onclick="QuickLinksComponent.deleteLink('${link.id}')">
+                            ×
+                        </button>
+                    `;
+                    
+                    container.appendChild(linkDiv);
+                });
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function save() {
+                return StorageService.set(STORAGE_KEYS.LINKS, links);
+            }
+            
+            function load() {
+                const savedLinks = StorageService.get(STORAGE_KEYS.LINKS);
+                links = Array.isArray(savedLinks) ? savedLinks : [];
+            }
+            
+            return {
+                init,
+                addLink,
+                deleteLink,
+                openLink,
+                getLinks: () => [...links],
+                save,
+                load
+            };
+        })();
+
+        // Make globally accessible
+        window.QuickLinksComponent = QuickLinksComponent;
+
+        // Run automated tests
+        function runTests() {
+            const results = document.getElementById('test-results');
+            let testsPassed = 0;
+            let totalTests = 0;
+
+            function test(name, condition) {
+                totalTests++;
+                const result = document.createElement('div');
+                if (condition) {
+                    result.innerHTML = `✅ <span class="pass">${name}</span>`;
+                    testsPassed++;
+                } else {
+                    result.innerHTML = `❌ <span class="fail">${name}</span>`;
+                }
+                results.appendChild(result);
+            }
+
+            // Clear any existing data
+            localStorage.removeItem(STORAGE_KEYS.LINKS);
+
+            // Test 1: Initial load with empty storage
+            const component = Object.create(QuickLinksComponent);
+            component.load();
+            test('Load from empty storage returns empty array', component.getLinks().length === 0);
+
+            // Test 2: Add link and save
+            component.addLink('Test Link', 'https://example.com');
+            test('Add link increases array length', component.getLinks().length === 1);
+
+            // Test 3: Verify save worked
+            const savedData = StorageService.get(STORAGE_KEYS.LINKS);
+            test('Save persists data to localStorage', Array.isArray(savedData) && savedData.length === 1);
+
+            // Test 4: Load from storage
+            const component2 = Object.create(QuickLinksComponent);
+            component2.load();
+            test('Load retrieves saved data', component2.getLinks().length === 1);
+            test('Loaded data matches saved data', component2.getLinks()[0].label === 'Test Link');
+
+            // Test 5: Delete and save
+            const linkId = component2.getLinks()[0].id;
+            component2.deleteLink(linkId);
+            test('Delete removes link', component2.getLinks().length === 0);
+
+            // Test 6: Verify delete persisted
+            const component3 = Object.create(QuickLinksComponent);
+            component3.load();
+            test('Delete persists to storage', component3.getLinks().length === 0);
+
+            // Summary
+            const summary = document.createElement('div');
+            summary.style.marginTop = '15px';
+            summary.style.fontWeight = 'bold';
+            if (testsPassed === totalTests) {
+                summary.innerHTML = `🎉 All ${totalTests} tests passed!`;
+                summary.className = 'pass';
+            } else {
+                summary.innerHTML = `⚠️ ${testsPassed}/${totalTests} tests passed`;
+                summary.className = 'fail';
+            }
+            results.appendChild(summary);
+        }
+
+        // Initialize component and run tests
+        document.addEventListener('DOMContentLoaded', () => {
+            QuickLinksComponent.init();
+            runTests();
+        });
+    </script>
+</body>
+</html>

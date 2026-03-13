@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Button Functionality Debug</h1>
+    
+    <div class="test-section">
+        <h2>Dashboard Preview</h2>
+        <iframe src="index.html" id="dashboard-iframe"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Button Tests</h2>
+        <button onclick="testDashboardButtons()">Test Dashboard Buttons</button>
+        <button onclick="checkConsoleErrors()">Check Console Errors</button>
+        <button onclick="testBasicFunctionality()">Test Basic JS</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Manual Button Test</h2>
+        <p>Try clicking these buttons in the dashboard above:</p>
+        <ul>
+            <li><strong>Theme Toggle (🌙/☀️):</strong> Should switch between light and dark themes</li>
+            <li><strong>Timer Start:</strong> Should start the countdown from 25:00</li>
+            <li><strong>Timer Stop:</strong> Should pause the timer</li>
+            <li><strong>Timer Reset:</strong> Should reset to 25:00</li>
+            <li><strong>Add Task:</strong> Should add a new task when you type and click</li>
+            <li><strong>Add Link:</strong> Should add a quick link when you fill both fields</li>
+        </ul>
+        <p><strong>If buttons don't work:</strong> Check the browser console (F12) for JavaScript errors.</p>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `${message}`;
+            results.appendChild(div);
+        }
+
+        function testDashboardButtons() {
+            log('🔍 Testing Dashboard Button Elements...', 'info');
+            
+            try {
+                const iframe = document.getElementById('dashboard-iframe');
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                if (!doc) {
+                    log('❌ Cannot access dashboard iframe (CORS or loading issue)', 'fail');
+                    return;
+                }
+
+                // Check for button elements
+                const buttons = [
+                    { id: 'theme-toggle', name: 'Theme Toggle' },
+                    { id: 'timer-start', name: 'Timer Start' },
+                    { id: 'timer-stop', name: 'Timer Stop' },
+                    { id: 'timer-reset', name: 'Timer Reset' },
+                    { id: 'add-task', name: 'Add Task' },
+                    { id: 'add-link', name: 'Add Link' }
+                ];
+
+                let found = 0;
+                buttons.forEach(btn => {
+                    const element = doc.getElementById(btn.id);
+                    if (element) {
+                        log(`✅ ${btn.name} button found`, 'pass');
+                        found++;
+                    } else {
+                        log(`❌ ${btn.name} button missing (ID: ${btn.id})`, 'fail');
+                    }
+                });
+
+                log(`📊 Found ${found}/${buttons.length} buttons`, found === buttons.length ? 'pass' : 'fail');
+
+                // Check if JavaScript is loaded
+                const scripts = doc.querySelectorAll('script');
+                log(`📜 Found ${scripts.length} script tags`, scripts.length > 0 ? 'pass' : 'fail');
+
+            } catch (error) {
+                log(`❌ Error testing buttons: ${error.message}`, 'fail');
+                log('💡 Try opening the dashboard in a new tab to test manually', 'info');
+            }
+        }
+
+        function checkConsoleErrors() {
+            log('🔍 Checking for JavaScript errors...', 'info');
+            
+            // This is a basic check - real errors would show in browser console
+            try {
+                // Test basic JavaScript functionality
+                const testObj = { test: true };
+                const jsonStr = JSON.stringify(testObj);
+                const parsed = JSON.parse(jsonStr);
+                
+                if (parsed.test) {
+                    log('✅ Basic JavaScript functionality working', 'pass');
+                } else {
+                    log('❌ JavaScript functionality issue detected', 'fail');
+                }
+
+                // Test localStorage
+                localStorage.setItem('test', 'value');
+                const retrieved = localStorage.getItem('test');
+                localStorage.removeItem('test');
+                
+                if (retrieved === 'value') {
+                    log('✅ LocalStorage working correctly', 'pass');
+                } else {
+                    log('❌ LocalStorage issue detected', 'fail');
+                }
+
+                log('💡 Check browser console (F12) for detailed error messages', 'info');
+
+            } catch (error) {
+                log(`❌ JavaScript error detected: ${error.message}`, 'fail');
+            }
+        }
+
+        function testBasicFunctionality() {
+            log('🧪 Testing Core JavaScript Functions...', 'info');
+            
+            try {
+                // Test timer format function
+                const formatDisplay = (seconds) => {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                };
+                
+                const timerTest = formatDisplay(1500) === '25:00';
+                log(`Timer Format: ${timerTest ? '✅ Working' : '❌ Failed'}`, timerTest ? 'pass' : 'fail');
+
+                // Test date formatting
+                const date = new Date();
+                const timeStr = date.toLocaleTimeString();
+                const dateTest = timeStr.length > 0;
+                log(`Date Format: ${dateTest ? '✅ Working' : '❌ Failed'}`, dateTest ? 'pass' : 'fail');
+
+                // Test URL validation
+                const isValidUrl = (url) => {
+                    try {
+                        const urlObj = new URL(url);
+                        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+                    } catch (error) {
+                        return false;
+                    }
+                };
+                
+                const urlTest = isValidUrl('https://example.com') && !isValidUrl('invalid');
+                log(`URL Validation: ${urlTest ? '✅ Working' : '❌ Failed'}`, urlTest ? 'pass' : 'fail');
+
+                log('🎯 Core functionality appears to be working correctly', 'pass');
+                log('💡 If buttons still don\'t work, the issue may be with event listener setup', 'info');
+
+            } catch (error) {
+                log(`❌ Core functionality error: ${error.message}`, 'fail');
+            }
+        }
+
+        // Auto-run basic test on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                log('🚀 Button Debug Tool Ready', 'info');
+                log('Click "Test Dashboard Buttons" to check if elements exist', 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

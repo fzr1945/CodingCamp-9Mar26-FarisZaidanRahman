@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug App Issues</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #console-output { background: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug App Issues</h1>
+    
+    <div class="info">
+        <strong>Testing:</strong> Line 174 error and task saving issues
+    </div>
+    
+    <button onclick="testJavaScriptErrors()">Test JavaScript Errors</button>
+    <button onclick="testTaskSaving()">Test Task Saving</button>
+    <button onclick="testCustomEvents()">Test Custom Events</button>
+    <button onclick="testLocalStorage()">Test Local Storage</button>
+    <button onclick="clearConsole()">Clear Console</button>
+    
+    <h3>Console Output:</h3>
+    <div id="console-output"></div>
+    
+    <h3>Dashboard Test:</h3>
+    <iframe src="index.html" width="100%" height="400" style="border: 2px solid #ddd; border-radius: 4px;"></iframe>
+
+    <script>
+        // Override console methods to capture output
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+        
+        function logToOutput(message, type = 'log') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : 'ℹ️';
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            
+            // Also log to real console
+            originalConsole[type](message);
+        }
+        
+        console.log = (msg) => logToOutput(msg, 'log');
+        console.error = (msg) => logToOutput(msg, 'error');
+        console.warn = (msg) => logToOutput(msg, 'warn');
+        
+        // Capture window errors
+        window.addEventListener('error', function(e) {
+            logToOutput(`JavaScript Error: ${e.message} at line ${e.lineno}`, 'error');
+        });
+        
+        function testJavaScriptErrors() {
+            logToOutput('🔍 Testing for JavaScript errors...', 'log');
+            
+            // Test basic JavaScript functionality
+            try {
+                const testObj = { test: true };
+                const jsonStr = JSON.stringify(testObj);
+                const parsed = JSON.parse(jsonStr);
+                logToOutput('✅ Basic JavaScript working', 'log');
+            } catch (error) {
+                logToOutput(`❌ Basic JavaScript error: ${error.message}`, 'error');
+            }
+            
+            // Test CustomEvent
+            try {
+                const event = new CustomEvent('test', { detail: { test: true } });
+                logToOutput('✅ CustomEvent working', 'log');
+            } catch (error) {
+                logToOutput(`❌ CustomEvent error: ${error.message}`, 'error');
+            }
+            
+            // Test localStorage
+            try {
+                localStorage.setItem('test', 'value');
+                const value = localStorage.getItem('test');
+                localStorage.removeItem('test');
+                if (value === 'value') {
+                    logToOutput('✅ localStorage working', 'log');
+                } else {
+                    logToOutput('❌ localStorage not working properly', 'error');
+                }
+            } catch (error) {
+                logToOutput(`❌ localStorage error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testTaskSaving() {
+            logToOutput('💾 Testing task saving functionality...', 'log');
+            
+            // Test if we can access the task manager
+            try {
+                // Simulate task saving
+                const testTask = {
+                    id: Date.now().toString(),
+                    text: 'Test task',
+                    completed: false,
+                    createdAt: Date.now()
+                };
+                
+                const key = 'productivity_dashboard_tasks';
+                const tasks = [testTask];
+                
+                // Test saving
+                localStorage.setItem(key, JSON.stringify(tasks));
+                logToOutput('✅ Task save to localStorage successful', 'log');
+                
+                // Test loading
+                const loaded = JSON.parse(localStorage.getItem(key));
+                if (loaded && loaded.length === 1 && loaded[0].text === 'Test task') {
+                    logToOutput('✅ Task load from localStorage successful', 'log');
+                } else {
+                    logToOutput('❌ Task load failed or data corrupted', 'error');
+                }
+                
+                // Cleanup
+                localStorage.removeItem(key);
+                
+            } catch (error) {
+                logToOutput(`❌ Task saving error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testCustomEvents() {
+            logToOutput('🎯 Testing custom events...', 'log');
+            
+            try {
+                // Test modern CustomEvent
+                const event1 = new CustomEvent('test:modern', { 
+                    detail: { test: true } 
+                });
+                logToOutput('✅ Modern CustomEvent created', 'log');
+                
+                // Test event dispatch
+                document.addEventListener('test:dispatch', function(e) {
+                    logToOutput('✅ Custom event dispatched and received', 'log');
+                });
+                
+                document.dispatchEvent(new CustomEvent('test:dispatch', {
+                    detail: { message: 'test' }
+                }));
+                
+            } catch (error) {
+                logToOutput(`❌ Custom event error: ${error.message}`, 'error');
+                
+                // Try fallback method
+                try {
+                    const event = document.createEvent('CustomEvent');
+                    event.initCustomEvent('test:fallback', false, false, { test: true });
+                    logToOutput('✅ Fallback CustomEvent created', 'log');
+                } catch (fallbackError) {
+                    logToOutput(`❌ Fallback CustomEvent error: ${fallbackError.message}`, 'error');
+                }
+            }
+        }
+        
+        function testLocalStorage() {
+            logToOutput('🗄️ Testing Local Storage functionality...', 'log');
+            
+            try {
+                // Test availability
+                if (typeof Storage !== 'undefined') {
+                    logToOutput('✅ Storage API available', 'log');
+                } else {
+                    logToOutput('❌ Storage API not available', 'error');
+                    return;
+                }
+                
+                // Test basic operations
+                const testKey = 'debug_test';
+                const testData = {
+                    string: 'test',
+                    number: 42,
+                    boolean: true,
+                    array: [1, 2, 3],
+                    object: { nested: 'value' }
+                };
+                
+                // Test write
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                logToOutput('✅ localStorage write successful', 'log');
+                
+                // Test read
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                if (JSON.stringify(retrieved) === JSON.stringify(testData)) {
+                    logToOutput('✅ localStorage read successful', 'log');
+                } else {
+                    logToOutput('❌ localStorage read failed - data mismatch', 'error');
+                }
+                
+                // Test remove
+                localStorage.removeItem(testKey);
+                if (localStorage.getItem(testKey) === null) {
+                    logToOutput('✅ localStorage remove successful', 'log');
+                } else {
+                    logToOutput('❌ localStorage remove failed', 'error');
+                }
+                
+            } catch (error) {
+                logToOutput(`❌ localStorage test error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearConsole() {
+            document.getElementById('console-output').textContent = '';
+        }
+        
+        // Auto-run basic tests
+        setTimeout(() => {
+            logToOutput('🚀 Starting automatic diagnostics...', 'log');
+            testJavaScriptErrors();
+            setTimeout(() => testTaskSaving(), 500);
+            setTimeout(() => testCustomEvents(), 1000);
+            setTimeout(() => testLocalStorage(), 1500);
+        }, 1000);
+    </script>
+</body>
+</html>

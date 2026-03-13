@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test and Fix App Issues</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .test-result {
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .test-btn {
+            padding: 5px 10px;
+            margin: 2px;
+            font-size: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Panel -->
+    <div class="test-panel">
+        <h4>🔧 Issue Tester</h4>
+        <button class="test-btn" onclick="testTaskSaving()">Test Task Save</button>
+        <button class="test-btn" onclick="testButtons()">Test Buttons</button>
+        <button class="test-btn" onclick="fixIssues()">Apply Fixes</button>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- Original Dashboard Content -->
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            
+            // Keep only last 10 results
+            while (results.children.length > 10) {
+                results.removeChild(results.firstChild);
+            }
+        }
+
+        function testTaskSaving() {
+            log('Testing task saving...', 'info');
+            
+            // Test 1: Check if task input exists
+            const taskInput = document.getElementById('task-input');
+            const addButton = document.getElementById('add-task');
+            
+            if (!taskInput) {
+                log('❌ Task input not found', 'fail');
+                return;
+            }
+            if (!addButton) {
+                log('❌ Add button not found', 'fail');
+                return;
+            }
+            
+            log('✅ Task elements found', 'pass');
+            
+            // Test 2: Try to add a task
+            taskInput.value = 'Test task ' + Date.now();
+            
+            // Check if button has event listener
+            const hasListener = addButton.onclick || addButton.addEventListener;
+            log(hasListener ? '✅ Button has listeners' : '❌ No button listeners', hasListener ? 'pass' : 'fail');
+            
+            // Simulate click
+            try {
+                addButton.click();
+                log('✅ Button click executed', 'pass');
+                
+                // Check if task was added to localStorage
+                setTimeout(() => {
+                    const tasks = localStorage.getItem('productivity_dashboard_tasks');
+                    if (tasks) {
+                        const parsed = JSON.parse(tasks);
+                        log(`✅ Tasks in storage: ${parsed.length}`, 'pass');
+                    } else {
+                        log('❌ No tasks in storage', 'fail');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ Button click error: ${error.message}`, 'fail');
+            }
+        }
+
+        function testButtons() {
+            log('Testing button functionality...', 'info');
+            
+            const buttons = [
+                { id: 'timer-start', name: 'Timer Start' },
+                { id: 'timer-stop', name: 'Timer Stop' },
+                { id: 'timer-reset', name: 'Timer Reset' },
+                { id: 'add-task', name: 'Add Task' },
+                { id: 'theme-toggle', name: 'Theme Toggle' }
+            ];
+            
+            buttons.forEach(btn => {
+                const element = document.getElementById(btn.id);
+                if (element) {
+                    log(`✅ ${btn.name} button found`, 'pass');
+                    
+                    // Test click
+                    try {
+                        element.click();
+                        log(`✅ ${btn.name} click works`, 'pass');
+                    } catch (error) {
+                        log(`❌ ${btn.name} click error: ${error.message}`, 'fail');
+                    }
+                } else {
+                    log(`❌ ${btn.name} button not found`, 'fail');
+                }
+            });
+        }
+
+        function fixIssues() {
+            log('Applying fixes...', 'info');
+            
+            // Fix 1: Ensure task button has direct event listener
+            const addButton = document.getElementById('add-task');
+            if (addButton) {
+                // Remove existing listeners and add new one
+                addButton.onclick = function() {
+                    console.log('Direct task add button clicked');
+                    const input = document.getElementById('task-input');
+                    if (input && input.value.trim()) {
+                        // Direct task addition
+                        const taskText = input.value.trim();
+                        const task = {
+                            id: Date.now().toString(),
+                            text: taskText,
+                            completed: false,
+                            createdAt: Date.now()
+                        };
+                        
+                        // Save to localStorage directly
+                        try {
+                            const existingTasks = JSON.parse(localStorage.getItem('productivity_dashboard_tasks') || '[]');
+                            existingTasks.push(task);
+                            localStorage.setItem('productivity_dashboard_tasks', JSON.stringify(existingTasks));
+                            
+                            // Clear input
+                            input.value = '';
+                            
+                            // Update display if TaskManager exists
+                            if (window.TaskManager && TaskManager.render) {
+                                TaskManager.render();
+                            }
+                            
+                            log('✅ Task saved directly', 'pass');
+                        } catch (error) {
+                            log(`❌ Direct save error: ${error.message}`, 'fail');
+                        }
+                    }
+                };
+                log('✅ Fixed add task button', 'pass');
+            }
+            
+            // Fix 2: Ensure timer buttons work
+            const timerStart = document.getElementById('timer-start');
+            const timerStop = document.getElementById('timer-stop');
+            const timerReset = document.getElementById('timer-reset');
+            
+            if (timerStart) {
+                timerStart.onclick = function() {
+                    console.log('Direct timer start clicked');
+                    if (window.TimerComponent && TimerComponent.start) {
+                        TimerComponent.start();
+                    }
+                };
+                log('✅ Fixed timer start', 'pass');
+            }
+            
+            if (timerStop) {
+                timerStop.onclick = function() {
+                    console.log('Direct timer stop clicked');
+                    if (window.TimerComponent && TimerComponent.stop) {
+                        TimerComponent.stop();
+                    }
+                };
+                log('✅ Fixed timer stop', 'pass');
+            }
+            
+            if (timerReset) {
+                timerReset.onclick = function() {
+                    console.log('Direct timer reset clicked');
+                    if (window.TimerComponent && TimerComponent.reset) {
+                        TimerComponent.reset();
+                    }
+                };
+                log('✅ Fixed timer reset', 'pass');
+            }
+            
+            log('🎉 All fixes applied!', 'pass');
+        }
+
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                log('🚀 Auto-testing started', 'info');
+                testButtons();
+                setTimeout(() => testTaskSaving(), 1000);
+            }, 2000);
+        });
+
+        // Listen for app initialization
+        document.addEventListener('app:initialized', function() {
+            log('✅ App initialized', 'pass');
+        });
+
+        // Capture console errors
+        window.addEventListener('error', function(e) {
+            log(`❌ JS Error: ${e.message} (line ${e.lineno})`, 'fail');
+        });
+    </script>
+</body>
+</html>

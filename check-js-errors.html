@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Error Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .error-section {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success-section {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-section {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        iframe {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 JavaScript Error Checker</h1>
+    
+    <div class="info-section">
+        <h3>📋 Error Detection</h3>
+        <p>This tool will help identify JavaScript errors in the dashboard application.</p>
+        <button onclick="loadDashboard()">Load Dashboard</button>
+        <button onclick="checkForErrors()">Check for Errors</button>
+        <button onclick="testBasicJS()">Test Basic JS</button>
+    </div>
+
+    <div id="dashboard-container" style="display: none;">
+        <h3>🌐 Dashboard (for error testing)</h3>
+        <iframe src="index.html" id="dashboard-iframe"></iframe>
+    </div>
+
+    <div id="error-results"></div>
+
+    <div class="info-section">
+        <h3>🛠️ Manual Error Checking</h3>
+        <ol>
+            <li>Open the dashboard in a new tab: <button onclick="openDashboard()">Open Dashboard</button></li>
+            <li>Open browser console (F12 → Console tab)</li>
+            <li>Look for red error messages</li>
+            <li>Try clicking timer buttons and watch for errors</li>
+            <li>Common errors to look for:
+                <ul>
+                    <li>"Uncaught TypeError" - function not found</li>
+                    <li>"Uncaught ReferenceError" - variable not defined</li>
+                    <li>"Uncaught SyntaxError" - code syntax issue</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <script>
+        // Global error handler
+        window.addEventListener('error', function(event) {
+            logError('Global Error', event.error || event.message, event.filename, event.lineno);
+        });
+
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            logError('Unhandled Promise Rejection', event.reason);
+        });
+
+        function logError(type, error, filename = '', line = '') {
+            const results = document.getElementById('error-results');
+            const div = document.createElement('div');
+            div.className = 'error-section';
+            
+            const errorInfo = `
+                <h4>❌ ${type}</h4>
+                <p><strong>Error:</strong> ${error}</p>
+                ${filename ? `<p><strong>File:</strong> ${filename}</p>` : ''}
+                ${line ? `<p><strong>Line:</strong> ${line}</p>` : ''}
+                <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+            `;
+            
+            div.innerHTML = errorInfo;
+            results.appendChild(div);
+        }
+
+        function logSuccess(message) {
+            const results = document.getElementById('error-results');
+            const div = document.createElement('div');
+            div.className = 'success-section';
+            div.innerHTML = `<h4>✅ ${message}</h4><p>Time: ${new Date().toLocaleTimeString()}</p>`;
+            results.appendChild(div);
+        }
+
+        function logInfo(message) {
+            const results = document.getElementById('error-results');
+            const div = document.createElement('div');
+            div.className = 'info-section';
+            div.innerHTML = `<h4>ℹ️ ${message}</h4><p>Time: ${new Date().toLocaleTimeString()}</p>`;
+            results.appendChild(div);
+        }
+
+        function loadDashboard() {
+            logInfo('Loading dashboard in iframe...');
+            const container = document.getElementById('dashboard-container');
+            container.style.display = 'block';
+            
+            const iframe = document.getElementById('dashboard-iframe');
+            iframe.onload = function() {
+                logSuccess('Dashboard loaded successfully');
+                
+                // Try to access the iframe content
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        const win = iframe.contentWindow;
+                        
+                        if (doc && win) {
+                            logSuccess('Dashboard content accessible');
+                            
+                            // Check for App object
+                            if (win.App) {
+                                logSuccess('App object found');
+                            } else {
+                                logError('App Check', 'App object not found in dashboard');
+                            }
+                        } else {
+                            logInfo('Dashboard content not accessible (CORS restriction)');
+                        }
+                    } catch (error) {
+                        logError('Dashboard Access', error.message);
+                    }
+                }, 1000);
+            };
+            
+            iframe.onerror = function() {
+                logError('Dashboard Load', 'Failed to load dashboard iframe');
+            };
+        }
+
+        function checkForErrors() {
+            logInfo('Checking for JavaScript errors...');
+            
+            try {
+                // Test basic JavaScript functionality
+                const testObj = { test: true };
+                const jsonStr = JSON.stringify(testObj);
+                const parsed = JSON.parse(jsonStr);
+                
+                if (parsed.test) {
+                    logSuccess('Basic JavaScript functionality working');
+                } else {
+                    logError('JS Test', 'Basic JavaScript test failed');
+                }
+
+                // Test localStorage
+                localStorage.setItem('error_test', 'value');
+                const retrieved = localStorage.getItem('error_test');
+                localStorage.removeItem('error_test');
+                
+                if (retrieved === 'value') {
+                    logSuccess('LocalStorage working correctly');
+                } else {
+                    logError('LocalStorage Test', 'LocalStorage test failed');
+                }
+
+                // Test timer format function (from the app)
+                const formatDisplay = (seconds) => {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                };
+                
+                const timerTest = formatDisplay(1500);
+                if (timerTest === '25:00') {
+                    logSuccess('Timer format function working');
+                } else {
+                    logError('Timer Format Test', `Expected 25:00, got ${timerTest}`);
+                }
+
+                logInfo('Error check completed. If no errors appear above, the basic functionality is working.');
+
+            } catch (error) {
+                logError('Error Check', error.message);
+            }
+        }
+
+        function testBasicJS() {
+            logInfo('Testing basic JavaScript features...');
+            
+            const tests = [
+                {
+                    name: 'Arrow Functions',
+                    test: () => {
+                        const arrow = () => 'test';
+                        return arrow() === 'test';
+                    }
+                },
+                {
+                    name: 'Template Literals',
+                    test: () => {
+                        const name = 'test';
+                        return `Hello ${name}` === 'Hello test';
+                    }
+                },
+                {
+                    name: 'Destructuring',
+                    test: () => {
+                        const obj = { a: 1, b: 2 };
+                        const { a, b } = obj;
+                        return a === 1 && b === 2;
+                    }
+                },
+                {
+                    name: 'Promises',
+                    test: () => {
+                        return typeof Promise !== 'undefined';
+                    }
+                },
+                {
+                    name: 'Async/Await',
+                    test: () => {
+                        try {
+                            eval('async function test() { await Promise.resolve(); }');
+                            return true;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                }
+            ];
+
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    if (result) {
+                        logSuccess(`${test.name} supported`);
+                    } else {
+                        logError('Feature Test', `${test.name} not supported`);
+                    }
+                } catch (error) {
+                    logError('Feature Test', `${test.name} test failed: ${error.message}`);
+                }
+            });
+        }
+
+        function openDashboard() {
+            const dashboardWindow = window.open('index.html', '_blank', 'width=1200,height=800');
+            if (dashboardWindow) {
+                logSuccess('Dashboard opened in new tab');
+                logInfo('Check the browser console (F12) in the new tab for errors');
+            } else {
+                logError('Dashboard Open', 'Failed to open dashboard (popup blocked?)');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            logInfo('JavaScript Error Checker ready');
+            logInfo('Click "Load Dashboard" to test for errors in the iframe');
+        });
+    </script>
+</body>
+</html>

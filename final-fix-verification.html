@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Fix Verification</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .fix-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        .test-log {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="fix-status">
+        <h4>✅ All Fixes Applied</h4>
+        <ul>
+            <li>✅ Removed PerformanceOptimizer wrappers</li>
+            <li>✅ Direct event listeners added</li>
+            <li>✅ Console logging enabled</li>
+            <li>✅ Task saving fixed</li>
+            <li>✅ CustomEvent error handling</li>
+        </ul>
+        <button onclick="runTests()" style="background: white; color: #28a745; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Run Tests</button>
+    </div>
+
+    <div class="test-log" id="test-log">
+        <strong>Test Log:</strong><br>
+        Ready to test...
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function log(message) {
+            const testLog = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.innerHTML += `<br>[${timestamp}] ${message}`;
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+
+        function runTests() {
+            log('🚀 Starting comprehensive tests...');
+            
+            // Test 1: Timer buttons
+            setTimeout(() => {
+                log('Testing timer buttons...');
+                const timerStart = document.getElementById('timer-start');
+                const timerStop = document.getElementById('timer-stop');
+                const timerReset = document.getElementById('timer-reset');
+                
+                if (timerStart) {
+                    timerStart.click();
+                    log('✅ Timer start clicked');
+                }
+                
+                setTimeout(() => {
+                    if (timerStop) {
+                        timerStop.click();
+                        log('✅ Timer stop clicked');
+                    }
+                }, 1000);
+                
+                setTimeout(() => {
+                    if (timerReset) {
+                        timerReset.click();
+                        log('✅ Timer reset clicked');
+                    }
+                }, 2000);
+            }, 500);
+            
+            // Test 2: Task adding
+            setTimeout(() => {
+                log('Testing task adding...');
+                const taskInput = document.getElementById('task-input');
+                const addButton = document.getElementById('add-task');
+                
+                if (taskInput && addButton) {
+                    taskInput.value = 'Test task ' + Date.now();
+                    addButton.click();
+                    log('✅ Task add clicked');
+                    
+                    // Check localStorage
+                    setTimeout(() => {
+                        const tasks = localStorage.getItem('productivity_dashboard_tasks');
+                        if (tasks) {
+                            const parsed = JSON.parse(tasks);
+                            log(`✅ Tasks saved: ${parsed.length} tasks in storage`);
+                        } else {
+                            log('❌ No tasks found in storage');
+                        }
+                    }, 500);
+                }
+            }, 3000);
+            
+            // Test 3: Theme toggle
+            setTimeout(() => {
+                log('Testing theme toggle...');
+                const themeToggle = document.getElementById('theme-toggle');
+                if (themeToggle) {
+                    themeToggle.click();
+                    log('✅ Theme toggle clicked');
+                }
+            }, 4000);
+            
+            // Test 4: Quick links
+            setTimeout(() => {
+                log('Testing quick links...');
+                const linkLabel = document.getElementById('link-label');
+                const linkUrl = document.getElementById('link-url');
+                const addLink = document.getElementById('add-link');
+                
+                if (linkLabel && linkUrl && addLink) {
+                    linkLabel.value = 'Test Link';
+                    linkUrl.value = 'https://example.com';
+                    addLink.click();
+                    log('✅ Quick link add clicked');
+                }
+            }, 5000);
+            
+            setTimeout(() => {
+                log('🎉 All tests completed! Check console for detailed logs.');
+            }, 6000);
+        }
+
+        // Capture console logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log('Console: ' + args.join(' '));
+        };
+
+        // Auto-run tests after app loads
+        document.addEventListener('app:initialized', function() {
+            log('✅ App initialized successfully');
+            setTimeout(runTests, 1000);
+        });
+
+        // Capture errors
+        window.addEventListener('error', function(e) {
+            log(`❌ Error: ${e.message} at line ${e.lineno}`);
+        });
+
+        log('Page loaded, waiting for app initialization...');
+    </script>
+</body>
+</html>

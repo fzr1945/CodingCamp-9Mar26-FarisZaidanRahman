@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Controller - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 2rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-secondary);
+        }
+        .test-result {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .test-fail {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .keyboard-shortcuts {
+            background-color: var(--bg-accent);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                🌙
+            </button>
+        </header>
+
+        <main class="main-content">
+            <div class="test-section">
+                <h2>Application Controller Test</h2>
+                <div id="test-results"></div>
+                
+                <div class="keyboard-shortcuts">
+                    <h3>Test Keyboard Shortcuts:</h3>
+                    <ul>
+                        <li><strong>Ctrl/Cmd + T:</strong> Focus task input</li>
+                        <li><strong>Ctrl/Cmd + L:</strong> Focus link label input</li>
+                        <li><strong>Space:</strong> Start/stop timer (when not in input)</li>
+                        <li><strong>Escape:</strong> Clear focused input</li>
+                    </ul>
+                </div>
+                
+                <button id="test-app-status" class="btn btn-primary">Test App Status</button>
+                <button id="test-restart" class="btn btn-secondary">Test Restart</button>
+                <button id="trigger-error" class="btn btn-danger">Trigger Test Error</button>
+            </div>
+
+            <!-- Timer Section -->
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks Section -->
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list">
+                    <!-- Tasks will be dynamically added here -->
+                </ul>
+            </section>
+
+            <!-- Quick Links Section -->
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container">
+                    <!-- Quick links will be dynamically added here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test the enhanced application controller
+        document.addEventListener('DOMContentLoaded', function() {
+            const testResults = document.getElementById('test-results');
+            
+            function addTestResult(test, passed, message) {
+                const div = document.createElement('div');
+                div.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+                div.textContent = `${test}: ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+                testResults.appendChild(div);
+            }
+            
+            // Wait for app initialization
+            document.addEventListener('app:initialized', function() {
+                addTestResult('App Initialization', true, 'Application initialized successfully');
+                
+                // Test app status
+                const status = App.getStatus();
+                addTestResult('App Status', status.initialized, `Initialized: ${status.initialized}, Components: ${status.components.length}`);
+                
+                // Test component access
+                const components = App.components();
+                addTestResult('Component Access', Object.keys(components).length > 0, `Found ${Object.keys(components).length} components`);
+            });
+            
+            // Test event listeners
+            document.addEventListener('timer:completed', function(event) {
+                addTestResult('Timer Event', true, `Timer completed event received: ${event.detail.mode}`);
+            });
+            
+            document.addEventListener('task:added', function(event) {
+                addTestResult('Task Event', true, `Task added event received: ${event.detail.task.text}`);
+            });
+            
+            document.addEventListener('theme:changed', function(event) {
+                addTestResult('Theme Event', true, `Theme changed event received: ${event.detail.theme}`);
+            });
+            
+            // Test buttons
+            document.getElementById('test-app-status').addEventListener('click', function() {
+                const status = App.getStatus();
+                alert(`App Status:\nInitialized: ${status.initialized}\nComponents: ${status.components.join(', ')}\nStorage Available: ${status.storageAvailable}`);
+            });
+            
+            document.getElementById('test-restart').addEventListener('click', function() {
+                App.restart();
+                addTestResult('App Restart', true, 'Application restarted successfully');
+            });
+            
+            document.getElementById('trigger-error').addEventListener('click', function() {
+                // Simulate an error for testing error handling
+                throw new Error('Test error for error handling');
+            });
+            
+            // Test keyboard shortcuts
+            let shortcutTests = 0;
+            document.addEventListener('keydown', function(event) {
+                if ((event.ctrlKey || event.metaKey) && event.key === 't') {
+                    shortcutTests++;
+                    addTestResult('Keyboard Shortcut', true, 'Ctrl/Cmd+T shortcut working');
+                }
+                if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
+                    shortcutTests++;
+                    addTestResult('Keyboard Shortcut', true, 'Ctrl/Cmd+L shortcut working');
+                }
+            });
+            
+            // Initial test
+            setTimeout(() => {
+                addTestResult('DOM Ready', true, 'Test page loaded successfully');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

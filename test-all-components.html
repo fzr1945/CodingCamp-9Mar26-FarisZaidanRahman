@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Components Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .test-result { margin: 5px 0; }
+        .summary { background: #f0f0f0; padding: 15px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Productivity Dashboard - Complete Functionality Test</h1>
+    <div id="test-results"></div>
+
+    <!-- Hidden DOM elements for testing -->
+    <div style="display: none;">
+        <div id="greeting-message"></div>
+        <div id="current-time"></div>
+        <div id="current-date"></div>
+        <div id="timer-display"></div>
+        <button id="timer-start"></button>
+        <button id="timer-stop"></button>
+        <button id="timer-reset"></button>
+        <button id="mode-toggle"></button>
+        <input id="task-input" />
+        <button id="add-task"></button>
+        <button id="sort-tasks"></button>
+        <ul id="task-list"></ul>
+        <input id="link-label" />
+        <input id="link-url" />
+        <button id="add-link"></button>
+        <div id="links-container"></div>
+        <button id="theme-toggle"></button>
+    </div>
+
+    <script>
+        // Test results container
+        const resultsContainer = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addTestResult(testName, passed, message = '') {
+            testCount++;
+            if (passed) passCount++;
+            
+            const div = document.createElement('div');
+            div.className = 'test-result';
+            div.innerHTML = `
+                <span class="${passed ? 'pass' : 'fail'}">
+                    ${passed ? '✓' : '✗'} ${testName}
+                </span>
+                ${message ? ` - ${message}` : ''}
+            `;
+            resultsContainer.appendChild(div);
+        }
+
+        function addSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `<h2>${title}</h2>`;
+            resultsContainer.appendChild(section);
+        }
+
+        // Mock localStorage for testing
+        const mockStorage = {
+            data: {},
+            setItem(key, value) { this.data[key] = value; },
+            getItem(key) { return this.data[key] || null; },
+            removeItem(key) { delete this.data[key]; },
+            clear() { this.data = {}; }
+        };
+
+        // Replace localStorage with mock for testing
+        Object.defineProperty(window, 'localStorage', { value: mockStorage });
+    </script>
+
+    <!-- Include the main app script -->
+    <script src="js/app.js"></script>
+
+    <script>
+        // Wait for app to initialize
+        setTimeout(() => {
+            runAllTests();
+        }, 200);
+
+        function runAllTests() {
+            console.log('Starting comprehensive component tests...');
+
+            // Test all components
+            testStorageService();
+            testGreetingComponent();
+            testTimerComponent();
+            testTaskManager();
+            testQuickLinksComponent();
+            testThemeManager();
+
+            // Summary
+            const summary = document.createElement('div');
+            summary.className = 'summary';
+            const percentage = Math.round((passCount / testCount) * 100);
+            summary.innerHTML = `
+                <h2>Test Summary</h2>
+                <p><strong>${passCount}/${testCount} tests passed (${percentage}%)</strong></p>
+                ${percentage >= 80 ? 
+                    '<p style="color: green;">✓ Core components are functional!</p>' : 
+                    '<p style="color: red;">⚠ Some components need attention</p>'
+                }
+            `;
+            resultsContainer.appendChild(summary);
+        }
+
+        function testStorageService() {
+            addSection('Storage Service Tests');
+
+            try {
+                // Test basic operations
+                const testData = { test: 'value', number: 42, array: [1, 2, 3] };
+                addTestResult('Set complex data', StorageService.set('test_key', testData));
+
+                const retrieved = StorageService.get('test_key');
+                addTestResult('Get complex data', 
+                    retrieved && 
+                    retrieved.test === 'value' && 
+                    retrieved.number === 42 &&
+                    Array.isArray(retrieved.array) &&
+                    retrieved.array.length === 3);
+
+                StorageService.remove('test_key');
+                addTestResult('Remove data', StorageService.get('test_key') === null);
+
+                addTestResult('Availability check', StorageService.isAvailable());
+
+                // Test error handling with invalid data
+                const circularObj = {};
+                circularObj.self = circularObj;
+                addTestResult('Handle circular reference', !StorageService.set('circular', circularObj));
+
+            } catch (error) {
+                addTestResult('Storage Service error handling', false, error.message);
+            }
+        }
+
+        function testGreetingComponent() {
+            addSection('Greeting Component Tests');
+
+            try {
+                // Test all greeting time ranges
+                addTestResult('Morning greeting (9 AM)', 
+                    GreetingComponent.getGreetingMessage(9) === 'Good morning, Faris');
+                
+                addTestResult('Afternoon greeting (2 PM)', 
+                    GreetingComponent.getGreetingMessage(14) === 'Good afternoon, Faris');
+                
+                addTestResult('Evening greeting (7 PM)', 
+                    GreetingComponent.getGreetingMessage(19) === 'Good evening, Faris');
+                
+                addTestResult('Night greeting (11 PM)', 
+                    GreetingComponent.getGreetingMessage(23) === 'Good night, Faris');
+
+                // Test boundary conditions
+                addTestResult('Boundary: 5 AM (morning start)', 
+                    GreetingComponent.getGreetingMessage(5) === 'Good morning, Faris');
+                
+                addTestResult('Boundary: 12 PM (afternoon start)', 
+                    GreetingComponent.getGreetingMessage(12) === 'Good afternoon, Faris');
+                
+                addTestResult('Boundary: 5 PM (evening start)', 
+                    GreetingComponent.getGreetingMessage(17) === 'Good evening, Faris');
+                
+                addTestResult('Boundary: 9 PM (night start)', 
+                    GreetingComponent.getGreetingMessage(21) === 'Good night, Faris');
+
+                // Test time formatting
+                const testDate = new Date('2024-01-15T14:30:45');
+                const formattedTime = GreetingComponent.formatTime(testDate);
+                addTestResult('Time format pattern', /^\d{1,2}:\d{2} (AM|PM)$/.test(formattedTime));
+
+                // Test date formatting
+                const formattedDate = GreetingComponent.formatDate(testDate);
+                addTestResult('Date includes month', formattedDate.includes('January'));
+                addTestResult('Date includes year', formattedDate.includes('2024'));
+
+            } catch (error) {
+                addTestResult('Greeting Component error', false, error.message);
+            }
+        }
+
+        function testTimerComponent() {
+            addSection('Timer Component Tests');
+
+            try {
+                // Test display formatting
+                addTestResult('Format 25:00', TimerComponent.formatDisplay(1500) === '25:00');
+                addTestResult('Format 01:05', TimerComponent.formatDisplay(65) === '01:05');
+                addTestResult('Format 00:00', TimerComponent.formatDisplay(0) === '00:00');
+                addTestResult('Format 59:59', TimerComponent.formatDisplay(3599) === '59:59');
+
+                // Test initial state
+                addTestResult('Initial time is 25 minutes', TimerComponent.getTimeRemaining() === 1500);
+                addTestResult('Initially not running', !TimerComponent.isRunning());
+                addTestResult('Initial mode is focus', TimerComponent.getMode() === 'focus');
+
+                // Test mode switching
+                TimerComponent.switchMode('pomodoro');
+                addTestResult('Switch to pomodoro mode', TimerComponent.getMode() === 'pomodoro');
+                
+                TimerComponent.switchMode('focus');
+                addTestResult('Switch back to focus mode', TimerComponent.getMode() === 'focus');
+
+                // Test invalid mode
+                TimerComponent.switchMode('invalid');
+                addTestResult('Reject invalid mode', TimerComponent.getMode() === 'focus');
+
+                // Test reset
+                TimerComponent.reset();
+                addTestResult('Reset preserves 25 minutes', TimerComponent.getTimeRemaining() === 1500);
+                addTestResult('Reset stops timer', !TimerComponent.isRunning());
+
+            } catch (error) {
+                addTestResult('Timer Component error', false, error.message);
+            }
+        }
+
+        function testTaskManager() {
+            addSection('Task Manager Tests');
+
+            try {
+                // Clear any existing tasks
+                mockStorage.clear();
+                
+                // Test task addition
+                const added = TaskManager.addTask('Test task 1');
+                addTestResult('Add valid task', added);
+
+                const tasks1 = TaskManager.getTasks();
+                addTestResult('Task list increases', tasks1.length === 1);
+                addTestResult('Task has correct text', tasks1[0].text === 'Test task 1');
+                addTestResult('Task has ID', typeof tasks1[0].id === 'string');
+                addTestResult('Task initially not completed', tasks1[0].completed === false);
+
+                // Test duplicate prevention
+                const duplicate = TaskManager.addTask('Test task 1');
+                addTestResult('Prevent duplicate task', !duplicate);
+                addTestResult('List size unchanged after duplicate', TaskManager.getTasks().length === 1);
+
+                // Test empty task rejection
+                const empty1 = TaskManager.addTask('');
+                const empty2 = TaskManager.addTask('   ');
+                addTestResult('Reject empty task', !empty1);
+                addTestResult('Reject whitespace-only task', !empty2);
+
+                // Test task completion toggle
+                const taskId = tasks1[0].id;
+                TaskManager.toggleTask(taskId);
+                const tasks2 = TaskManager.getTasks();
+                addTestResult('Toggle task completion', tasks2[0].completed === true);
+
+                TaskManager.toggleTask(taskId);
+                const tasks3 = TaskManager.getTasks();
+                addTestResult('Toggle task back to incomplete', tasks3[0].completed === false);
+
+                // Test task editing
+                TaskManager.editTask(taskId, 'Updated task text');
+                const tasks4 = TaskManager.getTasks();
+                addTestResult('Edit task text', tasks4[0].text === 'Updated task text');
+                addTestResult('Edit preserves ID', tasks4[0].id === taskId);
+
+                // Test sorting
+                TaskManager.addTask('Zebra task');
+                TaskManager.addTask('Apple task');
+                TaskManager.sortTasks();
+                const sortedTasks = TaskManager.getTasks();
+                addTestResult('Sort alphabetically', 
+                    sortedTasks[0].text === 'Apple task' && 
+                    sortedTasks[1].text === 'Updated task text' &&
+                    sortedTasks[2].text === 'Zebra task');
+
+                // Test task deletion
+                TaskManager.deleteTask(taskId);
+                const tasks5 = TaskManager.getTasks();
+                addTestResult('Delete task', tasks5.length === 2);
+                addTestResult('Deleted task not in list', !tasks5.find(t => t.id === taskId));
+
+            } catch (error) {
+                addTestResult('Task Manager error', false, error.message);
+            }
+        }
+
+        function testQuickLinksComponent() {
+            addSection('Quick Links Component Tests');
+
+            try {
+                // Clear any existing links
+                mockStorage.clear();
+
+                // Test link addition
+                QuickLinksComponent.addLink('Google', 'https://google.com');
+                const links1 = QuickLinksComponent.getLinks();
+                addTestResult('Add valid link', links1.length === 1);
+                addTestResult('Link has correct label', links1[0].label === 'Google');
+                addTestResult('Link has correct URL', links1[0].url === 'https://google.com');
+                addTestResult('Link has ID', typeof links1[0].id === 'string');
+
+                // Test multiple links
+                QuickLinksComponent.addLink('GitHub', 'https://github.com');
+                const links2 = QuickLinksComponent.getLinks();
+                addTestResult('Add second link', links2.length === 2);
+
+                // Test link deletion
+                const linkId = links1[0].id;
+                QuickLinksComponent.deleteLink(linkId);
+                const links3 = QuickLinksComponent.getLinks();
+                addTestResult('Delete link', links3.length === 1);
+                addTestResult('Correct link remains', links3[0].label === 'GitHub');
+
+                // Test empty inputs (should be handled by UI validation)
+                QuickLinksComponent.addLink('', 'https://example.com');
+                QuickLinksComponent.addLink('Test', '');
+                const links4 = QuickLinksComponent.getLinks();
+                addTestResult('Reject empty inputs', links4.length === 1);
+
+            } catch (error) {
+                addTestResult('Quick Links error', false, error.message);
+            }
+        }
+
+        function testThemeManager() {
+            addSection('Theme Manager Tests');
+
+            try {
+                // Test initial state
+                addTestResult('Initial theme available', typeof ThemeManager.getCurrentTheme() === 'string');
+
+                // Test theme toggling
+                const initialTheme = ThemeManager.getCurrentTheme();
+                ThemeManager.toggleTheme();
+                const toggledTheme = ThemeManager.getCurrentTheme();
+                addTestResult('Theme toggles', initialTheme !== toggledTheme);
+
+                ThemeManager.toggleTheme();
+                const backToOriginal = ThemeManager.getCurrentTheme();
+                addTestResult('Theme toggles back', initialTheme === backToOriginal);
+
+                // Test theme application
+                ThemeManager.applyTheme('dark');
+                addTestResult('Apply dark theme', ThemeManager.getCurrentTheme() === 'dark');
+
+                ThemeManager.applyTheme('light');
+                addTestResult('Apply light theme', ThemeManager.getCurrentTheme() === 'light');
+
+            } catch (error) {
+                addTestResult('Theme Manager error', false, error.message);
+            }
+        }
+    </script>
+</body>
+</html>

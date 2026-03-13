@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Persistence Verification</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .verification-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .verification-step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; }
+        .info { border-left-color: #17a2b8; }
+        .warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Task Persistence Integration Verification</h1>
+            <button id="theme-toggle" class="theme-toggle">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <div class="verification-panel">
+                <h2>Verification Steps</h2>
+                <div class="verification-step info">
+                    <strong>Step 1:</strong> Add some tasks using the form below
+                </div>
+                <div class="verification-step info">
+                    <strong>Step 2:</strong> Refresh the page (F5 or Ctrl+R)
+                </div>
+                <div class="verification-step success">
+                    <strong>Step 3:</strong> Verify that your tasks are still there after refresh
+                </div>
+                <div class="verification-step warning">
+                    <strong>Note:</strong> Tasks are automatically saved to Local Storage after each operation
+                </div>
+            </div>
+
+            <!-- Tasks Section -->
+            <section class="tasks-section">
+                <h2>Tasks (Persistence Test)</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a test task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                    <button onclick="showStorageInfo()" class="btn btn-secondary">Show Storage Info</button>
+                    <button onclick="clearAllTasks()" class="btn btn-danger">Clear All Tasks</button>
+                </div>
+                <ul id="task-list" class="task-list">
+                    <!-- Tasks will be dynamically added here -->
+                </ul>
+            </section>
+
+            <div class="verification-panel">
+                <h3>Storage Information</h3>
+                <div id="storage-info">
+                    <p>Click "Show Storage Info" to see current Local Storage data</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Additional verification functions
+        function showStorageInfo() {
+            const storageInfo = document.getElementById('storage-info');
+            const tasksData = localStorage.getItem('productivity_dashboard_tasks');
+            
+            if (tasksData) {
+                try {
+                    const tasks = JSON.parse(tasksData);
+                    storageInfo.innerHTML = `
+                        <h4>Local Storage Data:</h4>
+                        <p><strong>Number of tasks:</strong> ${tasks.length}</p>
+                        <p><strong>Raw data:</strong></p>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(tasks, null, 2)}</pre>
+                    `;
+                } catch (e) {
+                    storageInfo.innerHTML = `<p style="color: red;">Error parsing storage data: ${e.message}</p>`;
+                }
+            } else {
+                storageInfo.innerHTML = `<p>No tasks found in Local Storage</p>`;
+            }
+        }
+        
+        function clearAllTasks() {
+            if (confirm('Are you sure you want to clear all tasks? This will help test the persistence from a clean state.')) {
+                localStorage.removeItem('productivity_dashboard_tasks');
+                location.reload();
+            }
+        }
+        
+        // Show initial storage info on load
+        window.addEventListener('load', () => {
+            setTimeout(showStorageInfo, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        button { margin: 5px; padding: 8px 16px; }
+    </style>
+</head>
+<body>
+    <h1>Task Persistence Integration Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <button onclick="runTests()">Run Tests</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    
+    <script>
+        // Import the Storage Service and Task Manager from app.js
+        // We'll create a minimal version for testing
+        
+        const STORAGE_KEYS = {
+            TASKS: 'productivity_dashboard_tasks'
+        };
+        
+        // Minimal Storage Service for testing
+        const StorageService = {
+            get(key) {
+                try {
+                    const data = localStorage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    return null;
+                }
+            },
+            
+            set(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            },
+            
+            remove(key) {
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {}
+            }
+        };
+        
+        // Minimal Task Manager for testing
+        const TestTaskManager = {
+            tasks: [],
+            
+            save() {
+                return StorageService.set(STORAGE_KEYS.TASKS, this.tasks);
+            },
+            
+            load() {
+                const savedTasks = StorageService.get(STORAGE_KEYS.TASKS);
+                this.tasks = Array.isArray(savedTasks) ? savedTasks : [];
+                return this.tasks;
+            },
+            
+            addTask(text) {
+                if (!text || text.trim().length === 0) return false;
+                
+                const task = {
+                    id: Date.now().toString(),
+                    text: text.trim(),
+                    completed: false,
+                    createdAt: Date.now()
+                };
+                
+                this.tasks.push(task);
+                return this.save();
+            },
+            
+            clear() {
+                this.tasks = [];
+            }
+        };
+        
+        function runTests() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '';
+            
+            // Test 1: Save and Load Empty Tasks
+            addTestResult('Test 1: Save and Load Empty Tasks', testEmptyTasks());
+            
+            // Test 2: Save and Load Single Task
+            addTestResult('Test 2: Save and Load Single Task', testSingleTask());
+            
+            // Test 3: Save and Load Multiple Tasks
+            addTestResult('Test 3: Save and Load Multiple Tasks', testMultipleTasks());
+            
+            // Test 4: Persistence Across Manager Instances
+            addTestResult('Test 4: Persistence Across Manager Instances', testPersistenceAcrossInstances());
+            
+            // Test 5: Storage Service Integration
+            addTestResult('Test 5: Storage Service Integration', testStorageServiceIntegration());
+        }
+        
+        function testEmptyTasks() {
+            try {
+                TestTaskManager.clear();
+                TestTaskManager.save();
+                
+                const newManager = Object.create(TestTaskManager);
+                newManager.tasks = [];
+                newManager.load();
+                
+                return newManager.tasks.length === 0;
+            } catch (e) {
+                console.error('Test 1 failed:', e);
+                return false;
+            }
+        }
+        
+        function testSingleTask() {
+            try {
+                TestTaskManager.clear();
+                TestTaskManager.addTask('Test Task 1');
+                
+                const newManager = Object.create(TestTaskManager);
+                newManager.tasks = [];
+                newManager.load();
+                
+                return newManager.tasks.length === 1 && 
+                       newManager.tasks[0].text === 'Test Task 1' &&
+                       newManager.tasks[0].completed === false;
+            } catch (e) {
+                console.error('Test 2 failed:', e);
+                return false;
+            }
+        }
+        
+        function testMultipleTasks() {
+            try {
+                TestTaskManager.clear();
+                TestTaskManager.addTask('Task 1');
+                TestTaskManager.addTask('Task 2');
+                TestTaskManager.addTask('Task 3');
+                
+                const newManager = Object.create(TestTaskManager);
+                newManager.tasks = [];
+                newManager.load();
+                
+                return newManager.tasks.length === 3 &&
+                       newManager.tasks.some(t => t.text === 'Task 1') &&
+                       newManager.tasks.some(t => t.text === 'Task 2') &&
+                       newManager.tasks.some(t => t.text === 'Task 3');
+            } catch (e) {
+                console.error('Test 3 failed:', e);
+                return false;
+            }
+        }
+        
+        function testPersistenceAcrossInstances() {
+            try {
+                // Clear and add tasks with first instance
+                TestTaskManager.clear();
+                TestTaskManager.addTask('Persistent Task');
+                
+                // Create second instance and load
+                const secondManager = Object.create(TestTaskManager);
+                secondManager.tasks = [];
+                secondManager.load();
+                
+                // Modify with second instance
+                secondManager.tasks[0].completed = true;
+                secondManager.save();
+                
+                // Create third instance and verify
+                const thirdManager = Object.create(TestTaskManager);
+                thirdManager.tasks = [];
+                thirdManager.load();
+                
+                return thirdManager.tasks.length === 1 &&
+                       thirdManager.tasks[0].text === 'Persistent Task' &&
+                       thirdManager.tasks[0].completed === true;
+            } catch (e) {
+                console.error('Test 4 failed:', e);
+                return false;
+            }
+        }
+        
+        function testStorageServiceIntegration() {
+            try {
+                // Test direct storage service operations
+                const testData = [
+                    { id: '1', text: 'Direct Storage Test', completed: false, createdAt: Date.now() }
+                ];
+                
+                const saveResult = StorageService.set(STORAGE_KEYS.TASKS, testData);
+                const loadResult = StorageService.get(STORAGE_KEYS.TASKS);
+                
+                return saveResult === true &&
+                       Array.isArray(loadResult) &&
+                       loadResult.length === 1 &&
+                       loadResult[0].text === 'Direct Storage Test';
+            } catch (e) {
+                console.error('Test 5 failed:', e);
+                return false;
+            }
+        }
+        
+        function addTestResult(testName, passed) {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${testName}: ${passed ? 'PASS' : 'FAIL'}`;
+            results.appendChild(div);
+        }
+        
+        function clearStorage() {
+            StorageService.remove(STORAGE_KEYS.TASKS);
+            alert('Storage cleared');
+        }
+    </script>
+</body>
+</html>

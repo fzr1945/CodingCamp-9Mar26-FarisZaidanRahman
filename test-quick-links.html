@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Links Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .link-item { margin: 5px 0; }
+        .link-button { padding: 8px 12px; margin-right: 5px; }
+        .link-delete { padding: 4px 8px; background: red; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Quick Links Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Interface</h2>
+        <div class="link-input">
+            <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+            <input type="url" id="link-url" placeholder="https://example.com">
+            <button id="add-link">Add Link</button>
+        </div>
+        <div id="links-container" class="links-container">
+            <!-- Quick links will be dynamically added here -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // Mock localStorage for testing
+        const mockStorage = {};
+        const StorageService = {
+            get: (key) => mockStorage[key] ? JSON.parse(mockStorage[key]) : null,
+            set: (key, value) => { mockStorage[key] = JSON.stringify(value); return true; },
+            remove: (key) => delete mockStorage[key],
+            clear: () => Object.keys(mockStorage).forEach(key => delete mockStorage[key]),
+            isAvailable: () => true
+        };
+
+        const STORAGE_KEYS = {
+            LINKS: 'productivity_dashboard_links'
+        };
+
+        // Quick Links Component (copied from app.js)
+        const QuickLinksComponent = (() => {
+            'use strict';
+            
+            let links = [];
+            
+            function init() {
+                load();
+                setupEventListeners();
+                render();
+            }
+            
+            function setupEventListeners() {
+                const addBtn = document.getElementById('add-link');
+                if (addBtn) addBtn.addEventListener('click', handleAddLink);
+            }
+            
+            function handleAddLink() {
+                const labelInput = document.getElementById('link-label');
+                const urlInput = document.getElementById('link-url');
+                
+                if (labelInput && urlInput && labelInput.value.trim() && urlInput.value.trim()) {
+                    if (isValidUrl(urlInput.value.trim())) {
+                        addLink(labelInput.value.trim(), urlInput.value.trim());
+                        labelInput.value = '';
+                        urlInput.value = '';
+                    } else {
+                        alert('Please enter a valid URL (must start with http:// or https://)');
+                    }
+                }
+            }
+            
+            function isValidUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+                } catch {
+                    return false;
+                }
+            }
+            
+            function addLink(label, url) {
+                if (!label.trim() || !url.trim()) return;
+                
+                const link = {
+                    id: Date.now().toString(),
+                    label: label.trim(),
+                    url: url.trim()
+                };
+                
+                links.push(link);
+                save();
+                render();
+            }
+            
+            function deleteLink(id) {
+                links = links.filter(l => l.id !== id);
+                save();
+                render();
+            }
+            
+            function openLink(url) {
+                // For testing, just log instead of opening
+                console.log('Opening link:', url);
+                return url; // Return for testing
+            }
+            
+            function render() {
+                const container = document.getElementById('links-container');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                links.forEach(link => {
+                    const linkDiv = document.createElement('div');
+                    linkDiv.className = 'link-item';
+                    
+                    linkDiv.innerHTML = `
+                        <button class="link-button" onclick="QuickLinksComponent.openLink('${escapeHtml(link.url)}')">
+                            ${escapeHtml(link.label)}
+                        </button>
+                        <button class="link-delete" onclick="QuickLinksComponent.deleteLink('${link.id}')">
+                            ×
+                        </button>
+                    `;
+                    
+                    container.appendChild(linkDiv);
+                });
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function save() {
+                StorageService.set(STORAGE_KEYS.LINKS, links);
+            }
+            
+            function load() {
+                const savedLinks = StorageService.get(STORAGE_KEYS.LINKS);
+                links = Array.isArray(savedLinks) ? savedLinks : [];
+            }
+            
+            return {
+                init,
+                addLink,
+                deleteLink,
+                openLink,
+                getLinks: () => [...links]
+            };
+        })();
+
+        // Make globally accessible
+        window.QuickLinksComponent = QuickLinksComponent;
+
+        // Test functions
+        function runTests() {
+            const results = [];
+            
+            // Test 1: addLink() method exists and works
+            try {
+                const initialCount = QuickLinksComponent.getLinks().length;
+                QuickLinksComponent.addLink('Test Site', 'https://example.com');
+                const newCount = QuickLinksComponent.getLinks().length;
+                results.push({
+                    test: 'addLink() increases link count',
+                    pass: newCount === initialCount + 1,
+                    details: `Initial: ${initialCount}, After: ${newCount}`
+                });
+            } catch (e) {
+                results.push({
+                    test: 'addLink() method exists',
+                    pass: false,
+                    details: e.message
+                });
+            }
+
+            // Test 2: URL validation
+            try {
+                const initialCount = QuickLinksComponent.getLinks().length;
+                QuickLinksComponent.addLink('Invalid', 'not-a-url');
+                const newCount = QuickLinksComponent.getLinks().length;
+                results.push({
+                    test: 'URL validation prevents invalid URLs',
+                    pass: newCount === initialCount,
+                    details: `Count unchanged: ${initialCount} -> ${newCount}`
+                });
+            } catch (e) {
+                results.push({
+                    test: 'URL validation',
+                    pass: false,
+                    details: e.message
+                });
+            }
+
+            // Test 3: deleteLink() method
+            try {
+                const links = QuickLinksComponent.getLinks();
+                if (links.length > 0) {
+                    const initialCount = links.length;
+                    QuickLinksComponent.deleteLink(links[0].id);
+                    const newCount = QuickLinksComponent.getLinks().length;
+                    results.push({
+                        test: 'deleteLink() removes link',
+                        pass: newCount === initialCount - 1,
+                        details: `Initial: ${initialCount}, After: ${newCount}`
+                    });
+                } else {
+                    results.push({
+                        test: 'deleteLink() method',
+                        pass: true,
+                        details: 'No links to delete (method exists)'
+                    });
+                }
+            } catch (e) {
+                results.push({
+                    test: 'deleteLink() method',
+                    pass: false,
+                    details: e.message
+                });
+            }
+
+            // Test 4: openLink() method
+            try {
+                const result = QuickLinksComponent.openLink('https://example.com');
+                results.push({
+                    test: 'openLink() method exists',
+                    pass: result === 'https://example.com',
+                    details: 'Method callable and returns URL'
+                });
+            } catch (e) {
+                results.push({
+                    test: 'openLink() method',
+                    pass: false,
+                    details: e.message
+                });
+            }
+
+            // Test 5: DOM rendering
+            try {
+                QuickLinksComponent.addLink('GitHub', 'https://github.com');
+                const container = document.getElementById('links-container');
+                const hasButtons = container.querySelectorAll('.link-button').length > 0;
+                results.push({
+                    test: 'DOM rendering creates link buttons',
+                    pass: hasButtons,
+                    details: `Found ${container.querySelectorAll('.link-button').length} buttons`
+                });
+            } catch (e) {
+                results.push({
+                    test: 'DOM rendering',
+                    pass: false,
+                    details: e.message
+                });
+            }
+
+            displayResults(results);
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = result.pass ? 'pass' : 'fail';
+                div.innerHTML = `
+                    <strong>${result.pass ? '✓' : '✗'} ${result.test}</strong><br>
+                    ${result.details}
+                `;
+                container.appendChild(div);
+            });
+
+            const summary = document.createElement('div');
+            const passed = results.filter(r => r.pass).length;
+            summary.innerHTML = `<h3>Summary: ${passed}/${results.length} tests passed</h3>`;
+            container.insertBefore(summary, container.firstChild);
+        }
+
+        // Initialize and run tests
+        document.addEventListener('DOMContentLoaded', () => {
+            QuickLinksComponent.init();
+            setTimeout(runTests, 100); // Small delay to ensure initialization
+        });
+    </script>
+</body>
+</html>

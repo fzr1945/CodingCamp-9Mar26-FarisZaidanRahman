@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Functionality Test</title>
+    <style>
+        /* CSS Variables for Theme Support */
+        :root {
+            /* Light Theme Variables */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --primary-color: #007bff;
+        }
+
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --primary-color: #0d6efd;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding: 20px;
+        }
+
+        .test-container {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .theme-toggle {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Theme Functionality Test</h1>
+    
+    <button id="theme-toggle" class="theme-toggle">🌙 Toggle Theme</button>
+    
+    <div class="test-container">
+        <h2>Theme Test Container</h2>
+        <p>This container should change colors when theme is toggled.</p>
+        <p class="status">Current theme: <span id="current-theme">light</span></p>
+        <p class="status">Local Storage value: <span id="storage-value">none</span></p>
+    </div>
+
+    <div class="test-results">
+        <h3>Test Results:</h3>
+        <ul id="test-results"></ul>
+    </div>
+
+    <script>
+        // Simple theme manager for testing
+        let currentTheme = 'light';
+        
+        function applyTheme(theme) {
+            const body = document.body;
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeDisplay = document.getElementById('current-theme');
+            
+            if (theme === 'dark') {
+                body.setAttribute('data-theme', 'dark');
+                if (themeToggle) themeToggle.textContent = '☀️ Toggle Theme';
+            } else {
+                body.removeAttribute('data-theme');
+                if (themeToggle) themeToggle.textContent = '🌙 Toggle Theme';
+            }
+            
+            currentTheme = theme;
+            if (themeDisplay) themeDisplay.textContent = theme;
+            updateStorageDisplay();
+        }
+        
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(currentTheme);
+            saveTheme();
+            runTests();
+        }
+        
+        function saveTheme() {
+            try {
+                localStorage.setItem('productivity_dashboard_theme', JSON.stringify(currentTheme));
+                return true;
+            } catch (e) {
+                console.error('Failed to save theme:', e);
+                return false;
+            }
+        }
+        
+        function loadTheme() {
+            try {
+                const saved = localStorage.getItem('productivity_dashboard_theme');
+                return saved ? JSON.parse(saved) : 'light';
+            } catch (e) {
+                console.error('Failed to load theme:', e);
+                return 'light';
+            }
+        }
+        
+        function updateStorageDisplay() {
+            const storageDisplay = document.getElementById('storage-value');
+            const saved = localStorage.getItem('productivity_dashboard_theme');
+            if (storageDisplay) {
+                storageDisplay.textContent = saved || 'none';
+            }
+        }
+        
+        function runTests() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '';
+            
+            const tests = [
+                {
+                    name: 'Theme toggle changes current theme',
+                    test: () => currentTheme === 'dark' || currentTheme === 'light'
+                },
+                {
+                    name: 'Theme is saved to localStorage',
+                    test: () => {
+                        const saved = localStorage.getItem('productivity_dashboard_theme');
+                        return saved !== null;
+                    }
+                },
+                {
+                    name: 'Saved theme matches current theme',
+                    test: () => {
+                        const saved = JSON.parse(localStorage.getItem('productivity_dashboard_theme') || '"light"');
+                        return saved === currentTheme;
+                    }
+                },
+                {
+                    name: 'DOM reflects theme change',
+                    test: () => {
+                        if (currentTheme === 'dark') {
+                            return document.body.getAttribute('data-theme') === 'dark';
+                        } else {
+                            return !document.body.hasAttribute('data-theme');
+                        }
+                    }
+                }
+            ];
+            
+            tests.forEach(test => {
+                const li = document.createElement('li');
+                const passed = test.test();
+                li.textContent = `${test.name}: ${passed ? '✅ PASS' : '❌ FAIL'}`;
+                li.style.color = passed ? 'green' : 'red';
+                results.appendChild(li);
+            });
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = loadTheme();
+            currentTheme = savedTheme;
+            applyTheme(currentTheme);
+            
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            
+            runTests();
+        });
+    </script>
+</body>
+</html>

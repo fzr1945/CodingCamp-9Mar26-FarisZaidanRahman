@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Components Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .test-result { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Productivity Dashboard - Core Components Test</h1>
+    <div id="test-results"></div>
+
+    <script>
+        // Test results container
+        const resultsContainer = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addTestResult(testName, passed, message = '') {
+            testCount++;
+            if (passed) passCount++;
+            
+            const div = document.createElement('div');
+            div.className = 'test-result';
+            div.innerHTML = `
+                <span class="${passed ? 'pass' : 'fail'}">
+                    ${passed ? '✓' : '✗'} ${testName}
+                </span>
+                ${message ? ` - ${message}` : ''}
+            `;
+            resultsContainer.appendChild(div);
+        }
+
+        // Mock localStorage for testing
+        const mockStorage = {
+            data: {},
+            setItem(key, value) { this.data[key] = value; },
+            getItem(key) { return this.data[key] || null; },
+            removeItem(key) { delete this.data[key]; },
+            clear() { this.data = {}; }
+        };
+
+        // Replace localStorage with mock for testing
+        Object.defineProperty(window, 'localStorage', { value: mockStorage });
+    </script>
+
+    <!-- Include the main app script -->
+    <script src="js/app.js"></script>
+
+    <script>
+        // Wait for app to initialize
+        setTimeout(() => {
+            runTests();
+        }, 100);
+
+        function runTests() {
+            console.log('Starting core components tests...');
+
+            // Test 1: Storage Service
+            testStorageService();
+            
+            // Test 2: Greeting Component
+            testGreetingComponent();
+            
+            // Test 3: Timer Component
+            testTimerComponent();
+
+            // Summary
+            const summary = document.createElement('div');
+            summary.className = 'test-section';
+            summary.innerHTML = `<h2>Test Summary: ${passCount}/${testCount} tests passed</h2>`;
+            resultsContainer.appendChild(summary);
+        }
+
+        function testStorageService() {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = '<h2>Storage Service Tests</h2>';
+            resultsContainer.appendChild(section);
+
+            try {
+                // Test basic storage operations
+                const testData = { test: 'value', number: 42 };
+                const success = StorageService.set('test_key', testData);
+                addTestResult('Storage Service - Set data', success);
+
+                const retrieved = StorageService.get('test_key');
+                addTestResult('Storage Service - Get data', 
+                    retrieved && retrieved.test === 'value' && retrieved.number === 42);
+
+                StorageService.remove('test_key');
+                const removed = StorageService.get('test_key');
+                addTestResult('Storage Service - Remove data', removed === null);
+
+                addTestResult('Storage Service - Availability check', StorageService.isAvailable());
+
+            } catch (error) {
+                addTestResult('Storage Service - Error handling', false, error.message);
+            }
+        }
+
+        function testGreetingComponent() {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = '<h2>Greeting Component Tests</h2>';
+            resultsContainer.appendChild(section);
+
+            try {
+                // Test greeting messages for different hours
+                const morningGreeting = GreetingComponent.getGreetingMessage(9);
+                addTestResult('Greeting - Morning message', 
+                    morningGreeting === 'Good morning, Faris');
+
+                const afternoonGreeting = GreetingComponent.getGreetingMessage(14);
+                addTestResult('Greeting - Afternoon message', 
+                    afternoonGreeting === 'Good afternoon, Faris');
+
+                const eveningGreeting = GreetingComponent.getGreetingMessage(19);
+                addTestResult('Greeting - Evening message', 
+                    eveningGreeting === 'Good evening, Faris');
+
+                const nightGreeting = GreetingComponent.getGreetingMessage(23);
+                addTestResult('Greeting - Night message', 
+                    nightGreeting === 'Good night, Faris');
+
+                // Test time formatting
+                const testDate = new Date('2024-01-15T14:30:00');
+                const formattedTime = GreetingComponent.formatTime(testDate);
+                const timePattern = /^\d{1,2}:\d{2} (AM|PM)$/;
+                addTestResult('Greeting - Time format', timePattern.test(formattedTime));
+
+                // Test date formatting
+                const formattedDate = GreetingComponent.formatDate(testDate);
+                addTestResult('Greeting - Date format', 
+                    formattedDate.includes('January') && formattedDate.includes('2024'));
+
+            } catch (error) {
+                addTestResult('Greeting Component - Error', false, error.message);
+            }
+        }
+
+        function testTimerComponent() {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = '<h2>Timer Component Tests</h2>';
+            resultsContainer.appendChild(section);
+
+            try {
+                // Test timer display formatting
+                const display1 = TimerComponent.formatDisplay(1500); // 25:00
+                addTestResult('Timer - Format 25 minutes', display1 === '25:00');
+
+                const display2 = TimerComponent.formatDisplay(65); // 01:05
+                addTestResult('Timer - Format 1:05', display2 === '01:05');
+
+                const display3 = TimerComponent.formatDisplay(0); // 00:00
+                addTestResult('Timer - Format zero', display3 === '00:00');
+
+                // Test initial state
+                addTestResult('Timer - Initial time', TimerComponent.getTimeRemaining() === 1500);
+                addTestResult('Timer - Initial running state', !TimerComponent.isRunning());
+                addTestResult('Timer - Initial mode', TimerComponent.getMode() === 'focus');
+
+                // Test mode switching
+                TimerComponent.switchMode('pomodoro');
+                addTestResult('Timer - Switch to pomodoro', TimerComponent.getMode() === 'pomodoro');
+
+                TimerComponent.switchMode('focus');
+                addTestResult('Timer - Switch back to focus', TimerComponent.getMode() === 'focus');
+
+                // Test reset functionality
+                TimerComponent.reset();
+                addTestResult('Timer - Reset preserves 25 minutes', TimerComponent.getTimeRemaining() === 1500);
+
+            } catch (error) {
+                addTestResult('Timer Component - Error', false, error.message);
+            }
+        }
+    </script>
+</body>
+</html>

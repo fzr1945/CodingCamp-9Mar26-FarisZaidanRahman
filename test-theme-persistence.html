@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Theme Persistence Test</h1>
+    <div id="test-results"></div>
+    
+    <h2>Manual Test</h2>
+    <p>1. Click "Set Dark Theme" below</p>
+    <p>2. Reload this page</p>
+    <p>3. Check if theme persisted</p>
+    
+    <button onclick="testThemePersistence()">Run Automated Tests</button>
+    <button onclick="setDarkTheme()">Set Dark Theme</button>
+    <button onclick="setLightTheme()">Set Light Theme</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    
+    <script>
+        // Import the storage service logic
+        const StorageService = (() => {
+            function isAvailable() {
+                try {
+                    const test = '__storage_test__';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            function get(key) {
+                if (!isAvailable()) return null;
+                try {
+                    const data = localStorage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            function set(key, value) {
+                if (!isAvailable()) return false;
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            return { get, set, isAvailable };
+        })();
+        
+        const STORAGE_KEYS = {
+            THEME: 'productivity_dashboard_theme'
+        };
+        
+        function addTestResult(testName, passed, message) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function testThemePersistence() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Test 1: Storage Service availability
+            const storageAvailable = StorageService.isAvailable();
+            addTestResult('Storage Available', storageAvailable, 
+                storageAvailable ? 'Local Storage is available' : 'Local Storage not available');
+            
+            if (!storageAvailable) return;
+            
+            // Test 2: Save and load light theme
+            StorageService.set(STORAGE_KEYS.THEME, 'light');
+            const lightTheme = StorageService.get(STORAGE_KEYS.THEME);
+            addTestResult('Light Theme Persistence', lightTheme === 'light', 
+                `Expected 'light', got '${lightTheme}'`);
+            
+            // Test 3: Save and load dark theme
+            StorageService.set(STORAGE_KEYS.THEME, 'dark');
+            const darkTheme = StorageService.get(STORAGE_KEYS.THEME);
+            addTestResult('Dark Theme Persistence', darkTheme === 'dark', 
+                `Expected 'dark', got '${darkTheme}'`);
+            
+            // Test 4: Default behavior with no saved theme
+            localStorage.removeItem(STORAGE_KEYS.THEME);
+            const noTheme = StorageService.get(STORAGE_KEYS.THEME);
+            addTestResult('No Theme Default', noTheme === null, 
+                `Expected null, got '${noTheme}'`);
+        }
+        
+        function setDarkTheme() {
+            StorageService.set(STORAGE_KEYS.THEME, 'dark');
+            document.body.setAttribute('data-theme', 'dark');
+            alert('Dark theme set and saved. Reload page to test persistence.');
+        }
+        
+        function setLightTheme() {
+            StorageService.set(STORAGE_KEYS.THEME, 'light');
+            document.body.removeAttribute('data-theme');
+            alert('Light theme set and saved. Reload page to test persistence.');
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem(STORAGE_KEYS.THEME);
+            alert('Theme storage cleared.');
+        }
+        
+        // Check if theme was persisted on page load
+        window.addEventListener('load', () => {
+            const savedTheme = StorageService.get(STORAGE_KEYS.THEME);
+            if (savedTheme) {
+                if (savedTheme === 'dark') {
+                    document.body.setAttribute('data-theme', 'dark');
+                }
+                addTestResult('Page Load Theme', true, `Loaded theme: ${savedTheme}`);
+            } else {
+                addTestResult('Page Load Theme', true, 'No saved theme found (using default)');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .timer-test {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #007bff;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .timer-controls button {
+            margin: 10px;
+            padding: 15px 25px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🕐 Timer Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>🌐 Dashboard Timer</h2>
+        <iframe src="index.html" id="dashboard-iframe"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Timer Functionality Tests</h2>
+        <button onclick="testTimerElements()">Test Timer Elements</button>
+        <button onclick="testTimerLogic()">Test Timer Logic</button>
+        <button onclick="simulateTimerClicks()">Simulate Timer Clicks</button>
+        <button onclick="checkTimerState()">Check Timer State</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚙️ Standalone Timer Test</h2>
+        <p>This is a simplified version of the timer to test the core logic:</p>
+        <div class="timer-test">
+            <div class="timer-display" id="standalone-timer">25:00</div>
+            <div class="timer-controls">
+                <button onclick="standaloneStart()">Start</button>
+                <button onclick="standaloneStop()">Stop</button>
+                <button onclick="standaloneReset()">Reset</button>
+            </div>
+            <div id="standalone-status">Ready</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Timer Troubleshooting</h2>
+        <div id="troubleshooting">
+            <h4>Common Timer Issues:</h4>
+            <ul>
+                <li><strong>Buttons not responding:</strong> Check if event listeners are attached</li>
+                <li><strong>Timer not counting down:</strong> Check if setInterval is working</li>
+                <li><strong>Display not updating:</strong> Check if DOM elements exist</li>
+                <li><strong>Timer resets unexpectedly:</strong> Check for JavaScript errors</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Standalone timer for testing
+        let standaloneTime = 1500; // 25 minutes
+        let standaloneRunning = false;
+        let standaloneInterval = null;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `${message}`;
+            results.appendChild(div);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateStandaloneDisplay() {
+            const display = document.getElementById('standalone-timer');
+            const status = document.getElementById('standalone-status');
+            if (display) {
+                display.textContent = formatTime(standaloneTime);
+            }
+            if (status) {
+                status.textContent = standaloneRunning ? 'Running...' : 'Stopped';
+            }
+        }
+
+        function standaloneStart() {
+            if (!standaloneRunning && standaloneTime > 0) {
+                standaloneRunning = true;
+                standaloneInterval = setInterval(() => {
+                    if (standaloneTime > 0) {
+                        standaloneTime--;
+                        updateStandaloneDisplay();
+                    } else {
+                        standaloneStop();
+                        log('✅ Standalone timer completed!', 'pass');
+                    }
+                }, 1000);
+                updateStandaloneDisplay();
+                log('✅ Standalone timer started', 'pass');
+            }
+        }
+
+        function standaloneStop() {
+            if (standaloneRunning) {
+                standaloneRunning = false;
+                if (standaloneInterval) {
+                    clearInterval(standaloneInterval);
+                    standaloneInterval = null;
+                }
+                updateStandaloneDisplay();
+                log('✅ Standalone timer stopped', 'pass');
+            }
+        }
+
+        function standaloneReset() {
+            standaloneStop();
+            standaloneTime = 1500;
+            updateStandaloneDisplay();
+            log('✅ Standalone timer reset', 'pass');
+        }
+
+        function testTimerElements() {
+            log('🔍 Testing Timer Elements...', 'info');
+            
+            try {
+                const iframe = document.getElementById('dashboard-iframe');
+                
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        
+                        if (!doc) {
+                            log('⚠️ Cannot access iframe content', 'warning');
+                            return;
+                        }
+
+                        // Check timer elements
+                        const elements = [
+                            { id: 'timer-display', name: 'Timer Display' },
+                            { id: 'timer-start', name: 'Start Button' },
+                            { id: 'timer-stop', name: 'Stop Button' },
+                            { id: 'timer-reset', name: 'Reset Button' },
+                            { id: 'mode-toggle', name: 'Mode Toggle' }
+                        ];
+
+                        let found = 0;
+                        elements.forEach(elem => {
+                            const element = doc.getElementById(elem.id);
+                            if (element) {
+                                log(`✅ ${elem.name} found`, 'pass');
+                                found++;
+                                
+                                // Check content
+                                if (elem.id === 'timer-display') {
+                                    const content = element.textContent;
+                                    log(`  └─ Display shows: "${content}"`, content.includes(':') ? 'pass' : 'warning');
+                                }
+                            } else {
+                                log(`❌ ${elem.name} missing (ID: ${elem.id})`, 'fail');
+                            }
+                        });
+
+                        log(`📊 Found ${found}/${elements.length} timer elements`, found === elements.length ? 'pass' : 'fail');
+
+                    } catch (error) {
+                        log(`❌ Error accessing iframe: ${error.message}`, 'fail');
+                    }
+                }, 1000);
+
+            } catch (error) {
+                log(`❌ Error testing elements: ${error.message}`, 'fail');
+            }
+        }
+
+        function testTimerLogic() {
+            log('🧪 Testing Timer Logic...', 'info');
+            
+            // Test format function
+            const formatDisplay = (seconds) => {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            };
+            
+            const tests = [
+                { input: 1500, expected: '25:00', name: '25 minutes' },
+                { input: 125, expected: '02:05', name: '2 minutes 5 seconds' },
+                { input: 0, expected: '00:00', name: '0 seconds' },
+                { input: 3661, expected: '61:01', name: '61 minutes 1 second' }
+            ];
+            
+            tests.forEach(test => {
+                const result = formatDisplay(test.input);
+                const passed = result === test.expected;
+                log(`${passed ? '✅' : '❌'} ${test.name}: ${result} ${passed ? '==' : '!='} ${test.expected}`, 
+                    passed ? 'pass' : 'fail');
+            });
+            
+            // Test setInterval functionality
+            log('🔄 Testing setInterval...', 'info');
+            let testCounter = 0;
+            const testInterval = setInterval(() => {
+                testCounter++;
+                if (testCounter >= 3) {
+                    clearInterval(testInterval);
+                    log('✅ setInterval working correctly', 'pass');
+                }
+            }, 100);
+        }
+
+        function simulateTimerClicks() {
+            log('🖱️ Simulating Timer Button Clicks...', 'info');
+            
+            try {
+                const iframe = document.getElementById('dashboard-iframe');
+                
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        const win = iframe.contentWindow;
+                        
+                        if (!doc || !win) {
+                            log('⚠️ Cannot access iframe for click simulation', 'warning');
+                            return;
+                        }
+
+                        // Try to click start button
+                        const startBtn = doc.getElementById('timer-start');
+                        if (startBtn) {
+                            startBtn.click();
+                            log('🖱️ Clicked start button', 'info');
+                            
+                            // Check if timer started after a moment
+                            setTimeout(() => {
+                                if (win.App && win.App.components) {
+                                    const components = win.App.components();
+                                    if (components.timerComponent && components.timerComponent.isRunning) {
+                                        const running = components.timerComponent.isRunning();
+                                        log(`Timer running: ${running}`, running ? 'pass' : 'fail');
+                                    }
+                                }
+                            }, 1000);
+                        } else {
+                            log('❌ Start button not found for click test', 'fail');
+                        }
+
+                    } catch (error) {
+                        log(`❌ Error simulating clicks: ${error.message}`, 'fail');
+                    }
+                }, 1000);
+
+            } catch (error) {
+                log(`❌ Error in click simulation: ${error.message}`, 'fail');
+            }
+        }
+
+        function checkTimerState() {
+            log('📊 Checking Timer State...', 'info');
+            
+            try {
+                const iframe = document.getElementById('dashboard-iframe');
+                
+                setTimeout(() => {
+                    try {
+                        const win = iframe.contentWindow;
+                        
+                        if (!win) {
+                            log('⚠️ Cannot access iframe window', 'warning');
+                            return;
+                        }
+
+                        // Check if App exists
+                        if (win.App) {
+                            log('✅ App object found', 'pass');
+                            
+                            // Check app status
+                            if (typeof win.App.getStatus === 'function') {
+                                const status = win.App.getStatus();
+                                log(`App initialized: ${status.initialized}`, status.initialized ? 'pass' : 'fail');
+                                log(`Components: ${status.components.join(', ')}`, 'info');
+                                log(`Storage available: ${status.storageAvailable}`, status.storageAvailable ? 'pass' : 'warning');
+                            }
+                            
+                            // Check timer component
+                            const components = win.App.components();
+                            if (components.timerComponent) {
+                                log('✅ Timer component found', 'pass');
+                                
+                                if (typeof components.timerComponent.getTimeRemaining === 'function') {
+                                    const timeRemaining = components.timerComponent.getTimeRemaining();
+                                    log(`Time remaining: ${Math.floor(timeRemaining/60)}:${(timeRemaining%60).toString().padStart(2,'0')}`, 'info');
+                                }
+                                
+                                if (typeof components.timerComponent.isRunning === 'function') {
+                                    const running = components.timerComponent.isRunning();
+                                    log(`Timer running: ${running}`, 'info');
+                                }
+                                
+                                if (typeof components.timerComponent.getMode === 'function') {
+                                    const mode = components.timerComponent.getMode();
+                                    log(`Timer mode: ${mode}`, 'info');
+                                }
+                            } else {
+                                log('❌ Timer component not found', 'fail');
+                            }
+                        } else {
+                            log('❌ App object not found', 'fail');
+                        }
+
+                    } catch (error) {
+                        log(`❌ Error checking state: ${error.message}`, 'fail');
+                    }
+                }, 1000);
+
+            } catch (error) {
+                log(`❌ Error in state check: ${error.message}`, 'fail');
+            }
+        }
+
+        // Initialize standalone timer display
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStandaloneDisplay();
+            
+            setTimeout(() => {
+                log('🕐 Timer Debug Tool Ready', 'info');
+                log('Test the standalone timer above to verify basic timer logic works.', 'info');
+                log('Then use the test buttons to diagnose the dashboard timer.', 'info');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

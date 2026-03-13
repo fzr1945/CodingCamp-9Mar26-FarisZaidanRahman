@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Manager Functionality Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .pass { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .test-button {
+            margin: 10px 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Theme Manager Functionality Test</h1>
+        
+        <div class="test-section">
+            <h2>Theme Controls</h2>
+            <button id="test-toggle" class="btn btn-primary test-button">Toggle Theme</button>
+            <button id="test-light" class="btn btn-secondary test-button">Set Light</button>
+            <button id="test-dark" class="btn btn-secondary test-button">Set Dark</button>
+            <button id="test-current" class="btn btn-outline test-button">Show Current Theme</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Sample Content (to see theme changes)</h2>
+            <p>This is sample text to demonstrate theme changes.</p>
+            <div class="timer-display">25:00</div>
+            <div class="task-item">
+                <span class="task-text">Sample task item</span>
+                <button class="btn btn-small btn-success">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testCount = 0;
+        
+        function addTestResult(name, passed, details = '') {
+            testCount++;
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>Test ${testCount}: ${name}</strong> - ${passed ? '✅ PASS' : '❌ FAIL'}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for app to initialize
+            setTimeout(() => {
+                runTests();
+                setupTestButtons();
+            }, 500);
+        });
+
+        function runTests() {
+            console.log('Running Theme Manager tests...');
+            
+            // Test 1: ThemeManager exists
+            addTestResult('ThemeManager exists', typeof ThemeManager !== 'undefined');
+            
+            if (typeof ThemeManager === 'undefined') {
+                addTestResult('Cannot continue tests', false, 'ThemeManager not available');
+                return;
+            }
+
+            // Test 2: Has required methods
+            const hasToggle = typeof ThemeManager.toggleTheme === 'function';
+            const hasApply = typeof ThemeManager.applyTheme === 'function';
+            const hasCurrent = typeof ThemeManager.getCurrentTheme === 'function';
+            
+            addTestResult('Has required methods', hasToggle && hasApply && hasCurrent,
+                `toggleTheme: ${hasToggle}, applyTheme: ${hasApply}, getCurrentTheme: ${hasCurrent}`);
+
+            // Test 3: Get current theme
+            try {
+                const currentTheme = ThemeManager.getCurrentTheme();
+                addTestResult('Can get current theme', typeof currentTheme === 'string',
+                    `Current theme: ${currentTheme}`);
+            } catch (e) {
+                addTestResult('Can get current theme', false, e.message);
+            }
+
+            // Test 4: Theme toggle functionality
+            try {
+                const initialTheme = ThemeManager.getCurrentTheme();
+                ThemeManager.toggleTheme();
+                const toggledTheme = ThemeManager.getCurrentTheme();
+                const toggleWorked = initialTheme !== toggledTheme;
+                
+                addTestResult('Theme toggle works', toggleWorked,
+                    `${initialTheme} → ${toggledTheme}`);
+                
+                // Toggle back
+                ThemeManager.toggleTheme();
+                const backToOriginal = ThemeManager.getCurrentTheme();
+                addTestResult('Theme toggles back', initialTheme === backToOriginal,
+                    `Back to: ${backToOriginal}`);
+            } catch (e) {
+                addTestResult('Theme toggle works', false, e.message);
+            }
+
+            // Test 5: Apply specific themes
+            try {
+                ThemeManager.applyTheme('dark');
+                const isDark = ThemeManager.getCurrentTheme() === 'dark';
+                addTestResult('Can apply dark theme', isDark);
+
+                ThemeManager.applyTheme('light');
+                const isLight = ThemeManager.getCurrentTheme() === 'light';
+                addTestResult('Can apply light theme', isLight);
+            } catch (e) {
+                addTestResult('Can apply specific themes', false, e.message);
+            }
+
+            // Test 6: DOM changes with theme
+            try {
+                ThemeManager.applyTheme('dark');
+                const hasDarkAttribute = document.body.hasAttribute('data-theme');
+                const darkValue = document.body.getAttribute('data-theme');
+                
+                addTestResult('Dark theme sets DOM attribute', hasDarkAttribute && darkValue === 'dark',
+                    `data-theme="${darkValue}"`);
+
+                ThemeManager.applyTheme('light');
+                const hasLightAttribute = !document.body.hasAttribute('data-theme');
+                
+                addTestResult('Light theme removes DOM attribute', hasLightAttribute,
+                    `data-theme removed: ${hasLightAttribute}`);
+            } catch (e) {
+                addTestResult('DOM changes with theme', false, e.message);
+            }
+
+            console.log('Theme Manager tests completed');
+        }
+
+        function setupTestButtons() {
+            document.getElementById('test-toggle').addEventListener('click', () => {
+                if (typeof ThemeManager !== 'undefined') {
+                    ThemeManager.toggleTheme();
+                    console.log('Theme toggled to:', ThemeManager.getCurrentTheme());
+                }
+            });
+
+            document.getElementById('test-light').addEventListener('click', () => {
+                if (typeof ThemeManager !== 'undefined') {
+                    ThemeManager.applyTheme('light');
+                    console.log('Theme set to light');
+                }
+            });
+
+            document.getElementById('test-dark').addEventListener('click', () => {
+                if (typeof ThemeManager !== 'undefined') {
+                    ThemeManager.applyTheme('dark');
+                    console.log('Theme set to dark');
+                }
+            });
+
+            document.getElementById('test-current').addEventListener('click', () => {
+                if (typeof ThemeManager !== 'undefined') {
+                    alert(`Current theme: ${ThemeManager.getCurrentTheme()}`);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

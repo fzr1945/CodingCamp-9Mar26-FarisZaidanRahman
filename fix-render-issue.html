@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Render Issue</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .fix-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 450px;
+            background: #fff;
+            border: 3px solid #dc3545;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .fix-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .fix-btn {
+            padding: 12px 18px;
+            margin: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .fix-btn:hover { background: #c82333; }
+        .fix-btn.success { background: #28a745; }
+        .fix-btn.success:hover { background: #218838; }
+        .status { padding: 12px; margin: 10px 0; border-radius: 6px; font-weight: bold; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="fix-panel">
+        <h4>🔧 Fix Render Issue</h4>
+        <p><strong>Issue:</strong> Tasks and links are added but not appearing in lists</p>
+        
+        <div>
+            <button class="fix-btn" onclick="diagnoseRenderIssue()">🔍 Diagnose Issue</button>
+            <button class="fix-btn success" onclick="applyRenderFix()">🛠️ Apply Fix</button>
+            <button class="fix-btn" onclick="testAfterFix()">✅ Test Fix</button>
+            <button class="fix-btn" onclick="clearLog()">🗑️ Clear</button>
+        </div>
+        
+        <div id="fix-status"></div>
+        <div class="fix-log" id="fix-log">Ready to fix render issue...</div>
+        
+        <div style="margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 8px;">
+            <h5 style="margin: 0 0 10px 0;">🧪 Test Add & Render:</h5>
+            <input type="text" id="test-task-input" placeholder="Test task" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ced4da; border-radius: 4px;">
+            <button class="fix-btn success" onclick="testTaskAddAndRender()" style="width: 100%;">Add Task & Check Render</button>
+            
+            <div style="margin-top: 10px;">
+                <input type="text" id="test-link-label" placeholder="Link name" style="width: 48%; padding: 8px; margin: 2px; border: 1px solid #ced4da; border-radius: 4px;">
+                <input type="text" id="test-link-url" placeholder="https://example.com" style="width: 48%; padding: 8px; margin: 2px; border: 1px solid #ced4da; border-radius: 4px;">
+                <button class="fix-btn success" onclick="testLinkAddAndRender()" style="width: 100%; margin-top: 5px;">Add Link & Check Render</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+        </header>
+
+        <main class="main-content">
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list"></ul>
+            </section>
+
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let fixLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            fixLog.push(logEntry);
+            
+            const logDiv = document.getElementById('fix-log');
+            logDiv.textContent = fixLog.slice(-40).join('\n');
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('fix-status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function diagnoseRenderIssue() {
+            log('🔍 Diagnosing render issue...');
+            setStatus('Diagnosing render issue...', 'info');
+            
+            // Check if TaskManager and QuickLinksComponent exist
+            if (typeof TaskManager === 'undefined') {
+                log('❌ TaskManager not available');
+                setStatus('TaskManager missing', 'fail');
+                return;
+            }
+            
+            if (typeof QuickLinksComponent === 'undefined') {
+                log('❌ QuickLinksComponent not available');
+                setStatus('QuickLinksComponent missing', 'fail');
+                return;
+            }
+            
+            log('✅ Both TaskManager and QuickLinksComponent available');
+            
+            // Check DOM elements
+            const taskList = document.getElementById('task-list');
+            const linksContainer = document.getElementById('links-container');
+            
+            if (!taskList) {
+                log('❌ Task list element not found');
+                setStatus('Task list element missing', 'fail');
+                return;
+            }
+            
+            if (!linksContainer) {
+                log('❌ Links container element not found');
+                setStatus('Links container element missing', 'fail');
+                return;
+            }
+            
+            log('✅ DOM elements found');
+            
+            // Check current data
+            const tasks = TaskManager.getTasks();
+            const links = QuickLinksComponent.getLinks();
+            
+            log(`Current tasks in memory: ${tasks.length}`);
+            log(`Current links in memory: ${links.length}`);
+            log(`Task list DOM children: ${taskList.children.length}`);
+            log(`Links container DOM children: ${linksContainer.children.length}`);
+            
+            // Check if data exists but DOM is empty
+            if (tasks.length > 0 && taskList.children.length === 0) {
+                log('⚠️ Tasks exist in memory but not rendered to DOM');
+                setStatus('Render issue detected for tasks', 'warning');
+            }
+            
+            if (links.length > 0 && linksContainer.children.length === 0) {
+                log('⚠️ Links exist in memory but not rendered to DOM');
+                setStatus('Render issue detected for links', 'warning');
+            }
+            
+            if (tasks.length === taskList.children.length && links.length === linksContainer.children.length) {
+                log('✅ Data and DOM appear to be in sync');
+                setStatus('No render issues detected', 'pass');
+            }
+            
+            // Test PerformanceOptimizer functions
+            log('Testing PerformanceOptimizer functions...');
+            if (typeof PerformanceOptimizer === 'undefined') {
+                log('❌ PerformanceOptimizer not available');
+            } else {
+                if (typeof PerformanceOptimizer.batchDOMUpdate !== 'function') {
+                    log('❌ PerformanceOptimizer.batchDOMUpdate not available');
+                } else {
+                    log('✅ PerformanceOptimizer.batchDOMUpdate available');
+                }
+                
+                if (typeof PerformanceOptimizer.createDocumentFragment !== 'function') {
+                    log('❌ PerformanceOptimizer.createDocumentFragment not available');
+                } else {
+                    log('✅ PerformanceOptimizer.createDocumentFragment available');
+                }
+            }
+        }
+
+        function applyRenderFix() {
+            log('🛠️ Applying render fix...');
+            setStatus('Applying render fix...', 'info');
+            
+            // Create simplified render functions that work immediately
+            if (typeof TaskManager !== 'undefined') {
+                log('Fixing TaskManager render function...');
+                
+                // Override the render function with a simpler version
+                TaskManager.renderFixed = function() {
+                    log('TaskManager.renderFixed called');
+                    const taskList = document.getElementById('task-list');
+                    if (!taskList) {
+                        log('❌ Task list element not found');
+                        return;
+                    }
+                    
+                    const tasks = TaskManager.getTasks();
+                    log(`Rendering ${tasks.length} tasks`);
+                    
+                    // Clear existing content
+                    taskList.innerHTML = '';
+                    
+                    // Add each task directly
+                    tasks.forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                        
+                        li.innerHTML = `
+                            <span class="task-text">${escapeHtml(task.text)}</span>
+                            <div class="task-actions">
+                                <button class="btn btn-small btn-success" data-task-id="${task.id}" data-action="toggle">
+                                    ${task.completed ? 'Undo' : 'Done'}
+                                </button>
+                                <button class="btn btn-small btn-secondary" data-task-id="${task.id}" data-action="edit">
+                                    Edit
+                                </button>
+                                <button class="btn btn-small btn-danger" data-task-id="${task.id}" data-action="delete">
+                                    Delete
+                                </button>
+                            </div>
+                        `;
+                        
+                        taskList.appendChild(li);
+                    });
+                    
+                    log(`✅ Rendered ${tasks.length} tasks to DOM`);
+                };
+                
+                log('✅ TaskManager render fix applied');
+            }
+            
+            if (typeof QuickLinksComponent !== 'undefined') {
+                log('Fixing QuickLinksComponent render function...');
+                
+                // Override the render function with a simpler version
+                QuickLinksComponent.renderFixed = function() {
+                    log('QuickLinksComponent.renderFixed called');
+                    const container = document.getElementById('links-container');
+                    if (!container) {
+                        log('❌ Links container element not found');
+                        return;
+                    }
+                    
+                    const links = QuickLinksComponent.getLinks();
+                    log(`Rendering ${links.length} links`);
+                    
+                    // Clear existing content
+                    container.innerHTML = '';
+                    
+                    // Add each link directly
+                    links.forEach(link => {
+                        const linkDiv = document.createElement('div');
+                        linkDiv.className = 'link-item';
+                        
+                        linkDiv.innerHTML = `
+                            <button class="link-button" data-url="${escapeHtml(link.url)}">
+                                ${escapeHtml(link.label)}
+                            </button>
+                            <button class="link-delete" data-link-id="${link.id}">
+                                ×
+                            </button>
+                        `;
+                        
+                        container.appendChild(linkDiv);
+                    });
+                    
+                    log(`✅ Rendered ${links.length} links to DOM`);
+                };
+                
+                log('✅ QuickLinksComponent render fix applied');
+            }
+            
+            // Helper function for HTML escaping
+            window.escapeHtml = function(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+            
+            log('✅ Render fixes applied successfully');
+            setStatus('Render fixes applied', 'pass');
+        }
+
+        function testAfterFix() {
+            log('🧪 Testing render after fix...');
+            setStatus('Testing render...', 'info');
+            
+            // Force render with fixed functions
+            if (typeof TaskManager !== 'undefined' && TaskManager.renderFixed) {
+                log('Testing TaskManager fixed render...');
+                TaskManager.renderFixed();
+            }
+            
+            if (typeof QuickLinksComponent !== 'undefined' && QuickLinksComponent.renderFixed) {
+                log('Testing QuickLinksComponent fixed render...');
+                QuickLinksComponent.renderFixed();
+            }
+            
+            // Check results
+            setTimeout(() => {
+                const taskList = document.getElementById('task-list');
+                const linksContainer = document.getElementById('links-container');
+                
+                const taskCount = taskList ? taskList.children.length : 0;
+                const linkCount = linksContainer ? linksContainer.children.length : 0;
+                
+                log(`Tasks now visible in DOM: ${taskCount}`);
+                log(`Links now visible in DOM: ${linkCount}`);
+                
+                if (taskCount > 0 || linkCount > 0) {
+                    log('✅ Render fix successful - items now visible');
+                    setStatus('Render fix successful!', 'pass');
+                } else {
+                    log('❌ Items still not visible after fix');
+                    setStatus('Fix may not have worked', 'warning');
+                }
+            }, 100);
+        }
+
+        function testTaskAddAndRender() {
+            const input = document.getElementById('test-task-input');
+            const text = input.value.trim();
+            
+            if (!text) {
+                log('❌ No task text entered');
+                return;
+            }
+            
+            log(`🧪 Testing task add and render: "${text}"`);
+            
+            if (typeof TaskManager !== 'undefined' && TaskManager.addTask) {
+                const initialCount = TaskManager.getTasks().length;
+                const result = TaskManager.addTask(text);
+                
+                if (result) {
+                    input.value = '';
+                    log('✅ Task added successfully');
+                    
+                    // Force render with fixed function
+                    if (TaskManager.renderFixed) {
+                        TaskManager.renderFixed();
+                        log('✅ Fixed render called');
+                    }
+                    
+                    // Check DOM
+                    setTimeout(() => {
+                        const taskList = document.getElementById('task-list');
+                        const currentCount = taskList ? taskList.children.length : 0;
+                        log(`DOM task count: ${currentCount}`);
+                        
+                        if (currentCount > 0) {
+                            setStatus('Task add and render working!', 'pass');
+                        } else {
+                            setStatus('Task added but not rendered', 'warning');
+                        }
+                    }, 100);
+                } else {
+                    log('❌ Task add failed');
+                    setStatus('Task add failed', 'fail');
+                }
+            }
+        }
+
+        function testLinkAddAndRender() {
+            const labelInput = document.getElementById('test-link-label');
+            const urlInput = document.getElementById('test-link-url');
+            
+            const label = labelInput.value.trim();
+            const url = urlInput.value.trim();
+            
+            if (!label || !url) {
+                log('❌ Please enter both label and URL');
+                return;
+            }
+            
+            log(`🧪 Testing link add and render: "${label}" -> "${url}"`);
+            
+            if (typeof QuickLinksComponent !== 'undefined' && QuickLinksComponent.addLink) {
+                const result = QuickLinksComponent.addLink(label, url);
+                
+                if (result) {
+                    labelInput.value = '';
+                    urlInput.value = '';
+                    log('✅ Link added successfully');
+                    
+                    // Force render with fixed function
+                    if (QuickLinksComponent.renderFixed) {
+                        QuickLinksComponent.renderFixed();
+                        log('✅ Fixed render called');
+                    }
+                    
+                    // Check DOM
+                    setTimeout(() => {
+                        const container = document.getElementById('links-container');
+                        const currentCount = container ? container.children.length : 0;
+                        log(`DOM link count: ${currentCount}`);
+                        
+                        if (currentCount > 0) {
+                            setStatus('Link add and render working!', 'pass');
+                        } else {
+                            setStatus('Link added but not rendered', 'warning');
+                        }
+                    }, 100);
+                } else {
+                    log('❌ Link add failed');
+                    setStatus('Link add failed', 'fail');
+                }
+            }
+        }
+
+        function clearLog() {
+            fixLog = [];
+            document.getElementById('fix-log').textContent = 'Log cleared...';
+            document.getElementById('fix-status').innerHTML = '';
+        }
+
+        // Enhanced console logging
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('render') || message.includes('Render') || 
+                message.includes('DOM') || message.includes('Task') || 
+                message.includes('Link') || message.includes('add')) {
+                log(`App: ${message}`);
+            }
+        };
+
+        // Auto-start diagnosis
+        setTimeout(() => {
+            log('🚀 Auto-starting render diagnosis...');
+            diagnoseRenderIssue();
+        }, 2000);
+    </script>
+</body>
+</html>

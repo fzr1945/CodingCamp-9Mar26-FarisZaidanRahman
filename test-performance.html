@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .performance-test {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 300px;
+            z-index: 1000;
+            font-size: 0.9rem;
+        }
+        
+        .performance-test h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .test-result {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .test-fail {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .test-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .performance-controls {
+            margin-top: 10px;
+        }
+        
+        .performance-controls button {
+            margin: 2px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Performance Test Panel -->
+        <div class="performance-test" id="performance-panel">
+            <h3>📊 Performance Monitor</h3>
+            <div id="performance-results"></div>
+            <div class="performance-controls">
+                <button class="btn btn-small btn-primary" onclick="runPerformanceTests()">Run Tests</button>
+                <button class="btn btn-small btn-secondary" onclick="toggleAutoTest()">Auto Test</button>
+                <button class="btn btn-small btn-outline" onclick="clearResults()">Clear</button>
+            </div>
+        </div>
+
+        <!-- Header Section -->
+        <header class="header">
+            <div class="greeting-section">
+                <h1 id="greeting-message">Good morning, Faris</h1>
+                <div class="time-date">
+                    <span id="current-time">12:00 PM</span>
+                    <span id="current-date">Monday, January 1, 2024</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                🌙
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Timer Section -->
+            <section class="timer-section">
+                <h2>Focus Timer</h2>
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary">Start</button>
+                        <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                        <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="timer-mode">
+                        <button id="mode-toggle" class="btn btn-outline">Switch to Pomodoro</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks Section -->
+            <section class="tasks-section">
+                <h2>Tasks</h2>
+                <div class="task-input">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="500">
+                    <button id="add-task" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-controls">
+                    <button id="sort-tasks" class="btn btn-outline">Sort A-Z</button>
+                </div>
+                <ul id="task-list" class="task-list">
+                    <!-- Tasks will be dynamically added here -->
+                </ul>
+            </section>
+
+            <!-- Quick Links Section -->
+            <section class="links-section">
+                <h2>Quick Links</h2>
+                <div class="link-input">
+                    <input type="text" id="link-label" placeholder="Link name..." maxlength="50">
+                    <input type="url" id="link-url" placeholder="https://example.com">
+                    <button id="add-link" class="btn btn-primary">Add Link</button>
+                </div>
+                <div id="links-container" class="links-container">
+                    <!-- Quick links will be dynamically added here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Performance Testing Suite
+        let autoTestInterval = null;
+        let testResults = [];
+
+        /**
+         * Run comprehensive performance tests
+         */
+        function runPerformanceTests() {
+            const results = [];
+            
+            // Test 1: Initial load time (simulated)
+            const loadTime = performance.now();
+            results.push({
+                name: 'Initial Load Time',
+                value: loadTime,
+                target: 2000,
+                pass: loadTime < 2000,
+                unit: 'ms'
+            });
+
+            // Test 2: Task addition performance
+            const taskAddTime = measureOperation(() => {
+                const taskInput = document.getElementById('task-input');
+                if (taskInput) {
+                    taskInput.value = `Test task ${Date.now()}`;
+                    document.getElementById('add-task').click();
+                }
+            });
+            
+            results.push({
+                name: 'Task Addition',
+                value: taskAddTime,
+                target: 100,
+                pass: taskAddTime < 100,
+                unit: 'ms'
+            });
+
+            // Test 3: Theme switching performance
+            const themeTime = measureOperation(() => {
+                document.getElementById('theme-toggle').click();
+            });
+            
+            results.push({
+                name: 'Theme Switch',
+                value: themeTime,
+                target: 100,
+                pass: themeTime < 100,
+                unit: 'ms'
+            });
+
+            // Test 4: Large dataset performance (add multiple tasks)
+            const largeDatasetTime = measureOperation(() => {
+                for (let i = 0; i < 50; i++) {
+                    const taskInput = document.getElementById('task-input');
+                    if (taskInput) {
+                        taskInput.value = `Bulk task ${i}`;
+                        document.getElementById('add-task').click();
+                    }
+                }
+            });
+            
+            results.push({
+                name: 'Large Dataset (50 tasks)',
+                value: largeDatasetTime,
+                target: 1000,
+                pass: largeDatasetTime < 1000,
+                unit: 'ms'
+            });
+
+            // Test 5: Memory usage (if available)
+            if (performance.memory) {
+                const memoryUsage = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+                results.push({
+                    name: 'Memory Usage',
+                    value: memoryUsage,
+                    target: 50,
+                    pass: memoryUsage < 50,
+                    unit: 'MB'
+                });
+            }
+
+            // Test 6: Timer update performance
+            let timerUpdateTime = 0;
+            if (window.TimerComponent) {
+                timerUpdateTime = measureOperation(() => {
+                    // Simulate timer updates
+                    for (let i = 0; i < 10; i++) {
+                        document.getElementById('timer-display').textContent = `${24 - i}:59`;
+                    }
+                });
+                
+                results.push({
+                    name: 'Timer Updates (10x)',
+                    value: timerUpdateTime,
+                    target: 16,
+                    pass: timerUpdateTime < 16,
+                    unit: 'ms'
+                });
+            }
+
+            // Display results
+            displayResults(results);
+            testResults = results;
+            
+            // Get performance metrics from the optimizer
+            if (window.PerformanceOptimizer) {
+                const metrics = PerformanceOptimizer.getPerformanceMetrics();
+                console.log('Performance Metrics:', metrics);
+            }
+        }
+
+        /**
+         * Measure operation execution time
+         */
+        function measureOperation(operation) {
+            const start = performance.now();
+            operation();
+            const end = performance.now();
+            return end - start;
+        }
+
+        /**
+         * Display test results in the panel
+         */
+        function displayResults(results) {
+            const container = document.getElementById('performance-results');
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.pass ? 'test-pass' : 'test-fail'}`;
+                
+                const status = result.pass ? '✓' : '✗';
+                div.innerHTML = `
+                    ${status} ${result.name}: ${result.value.toFixed(2)}${result.unit}
+                    <small>(target: <${result.target}${result.unit})</small>
+                `;
+                
+                container.appendChild(div);
+            });
+            
+            // Add summary
+            const passCount = results.filter(r => r.pass).length;
+            const summary = document.createElement('div');
+            summary.className = `test-result ${passCount === results.length ? 'test-pass' : 'test-warning'}`;
+            summary.innerHTML = `<strong>Summary: ${passCount}/${results.length} tests passed</strong>`;
+            container.appendChild(summary);
+        }
+
+        /**
+         * Toggle automatic testing
+         */
+        function toggleAutoTest() {
+            if (autoTestInterval) {
+                clearInterval(autoTestInterval);
+                autoTestInterval = null;
+                document.querySelector('[onclick="toggleAutoTest()"]').textContent = 'Auto Test';
+            } else {
+                autoTestInterval = setInterval(runPerformanceTests, 10000); // Every 10 seconds
+                document.querySelector('[onclick="toggleAutoTest()"]').textContent = 'Stop Auto';
+            }
+        }
+
+        /**
+         * Clear test results
+         */
+        function clearResults() {
+            document.getElementById('performance-results').innerHTML = '';
+            testResults = [];
+        }
+
+        /**
+         * Test with large datasets
+         */
+        function testLargeDataset() {
+            console.log('Testing with large dataset...');
+            
+            // Add 1000 tasks to test performance
+            const startTime = performance.now();
+            
+            for (let i = 0; i < 1000; i++) {
+                if (window.TaskManager) {
+                    TaskManager.addTask(`Performance test task ${i}`);
+                }
+            }
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            
+            console.log(`Added 1000 tasks in ${duration.toFixed(2)}ms`);
+            
+            if (duration > 2000) {
+                console.warn('Large dataset performance is slow');
+            } else {
+                console.log('Large dataset performance is acceptable');
+            }
+        }
+
+        // Initialize performance testing when app is ready
+        document.addEventListener('app:initialized', () => {
+            console.log('🚀 Performance testing initialized');
+            console.log('Use Ctrl+P to view performance metrics');
+            console.log('Available test functions:');
+            console.log('- runPerformanceTests(): Run all performance tests');
+            console.log('- testLargeDataset(): Test with 1000 tasks');
+            console.log('- App.showPerformanceReport(): Show detailed metrics');
+            
+            // Run initial performance test
+            setTimeout(runPerformanceTests, 2000);
+        });
+
+        // Make functions globally available
+        window.runPerformanceTests = runPerformanceTests;
+        window.testLargeDataset = testLargeDataset;
+        window.toggleAutoTest = toggleAutoTest;
+        window.clearResults = clearResults;
+    </script>
+</body>
+</html>
